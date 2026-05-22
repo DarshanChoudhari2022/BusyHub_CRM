@@ -19,7 +19,7 @@ const WEBHOOK_BASE = SUPABASE_PROJECT_URL ? `${SUPABASE_PROJECT_URL}/functions/v
 const PLATFORM_PRESETS: Record<string, { method: string; desc: string; color: string; functionName: string }> = {
   "Just Dial": { method: "Webhook push", desc: "Share the URL with your JustDial account manager", color: "border-yellow-300 bg-yellow-50", functionName: "justdial-webhook" },
   "Meta Ads": { method: "Facebook Lead Ads API", desc: "Set as callback URL in Facebook App → Webhooks", color: "border-blue-300 bg-blue-50", functionName: "meta-leads-webhook" },
-  "Google Ads": { method: "Lead Form Extensions", desc: "Set as webhook URL in Google Ads Lead Form settings", color: "border-red-300 bg-red-50", functionName: "google-leads-webhook" },
+  "Google Ads": { method: "Lead Form Extensions", desc: "Set as webhook URL in Google Ads Lead Form settings", color: "border-blue-300 bg-blue-50", functionName: "google-leads-webhook" },
   "OEM CRM": { method: "API pull / Email parser", desc: "Brand-specific setup — configure per OEM", color: "border-purple-300 bg-purple-50", functionName: "" },
 };
 
@@ -198,7 +198,7 @@ const Settings = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Switch checked={w.is_active} onCheckedChange={() => toggleActive(w.id, w.is_active)} />
-                        <Button size="sm" variant="ghost" className="h-7 px-1.5 text-red-500 hover:text-red-700" onClick={() => deleteIntegration(w.id, w.platform)}>
+                        <Button size="sm" variant="ghost" className="h-7 px-1.5 text-blue-500 hover:text-blue-700" onClick={() => deleteIntegration(w.id, w.platform)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -244,7 +244,7 @@ const Settings = () => {
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded bg-primary border border-border" />
-                <span className="font-mono text-xs">#E8192C</span>
+                <span className="font-mono text-xs">#0EA5E9</span>
               </div>
             </div>
             <div className="flex items-center justify-between p-3 border border-border rounded-lg">

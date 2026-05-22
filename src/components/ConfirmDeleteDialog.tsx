@@ -57,7 +57,7 @@ export function ConfirmDeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
+          <DialogTitle className="flex items-center gap-2 text-blue-600">
             <AlertTriangle className="h-5 w-5" />
             {title}
           </DialogTitle>
@@ -65,14 +65,14 @@ export function ConfirmDeleteDialog({
         </DialogHeader>
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            Type <span className="font-bold text-red-600 tracking-wider">DELETE</span> to confirm
+            Type <span className="font-bold text-blue-600 tracking-wider">DELETE</span> to confirm
           </label>
           <Input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="Type DELETE here"
             autoFocus
-            className={isMatch ? "border-red-500 focus-visible:ring-red-500" : ""}
+            className={isMatch ? "border-blue-500 focus-visible:ring-blue-500" : ""}
           />
         </div>
         <DialogFooter className="gap-2 sm:gap-0">

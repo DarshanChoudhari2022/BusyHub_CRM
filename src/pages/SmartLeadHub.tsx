@@ -24,7 +24,7 @@ type LeadStatus = "New" | "Assigned" | "Contacted" | "Follow-up" | "Converted" |
 const SOURCE_COLORS: Record<string, string> = {
   "Just Dial": "bg-yellow-100 text-yellow-800 border-yellow-300",
   "Meta Ads": "bg-blue-100 text-blue-800 border-blue-300",
-  "Google Ads": "bg-red-100 text-red-800 border-red-300",
+  "Google Ads": "bg-blue-100 text-blue-800 border-blue-300",
   "OEM CRM": "bg-purple-100 text-purple-800 border-purple-300",
   "Walk-in": "bg-green-100 text-green-800 border-green-300",
   "Website": "bg-cyan-100 text-cyan-800 border-cyan-300",
@@ -37,7 +37,7 @@ const STATUS_COLORS: Record<string, string> = {
   Contacted: "bg-emerald-500",
   "Follow-up": "bg-orange-500",
   Converted: "bg-green-600",
-  Lost: "bg-red-500",
+  Lost: "bg-blue-500",
 };
 
 const SLA_THRESHOLD_SECONDS = 15 * 60; // 15 minutes SLA for first response
@@ -306,10 +306,10 @@ const SmartLeadHub = () => {
                 <div className="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center"><Clock className="h-6 w-6 text-amber-500" /></div>
               </div>
             </Card>
-            <Card className={`p-4 border-l-4 ${unassignedCount > 0 ? "border-l-red-500 animate-pulse" : "border-l-green-500"}`}>
+            <Card className={`p-4 border-l-4 ${unassignedCount > 0 ? "border-l-blue-500 animate-pulse" : "border-l-green-500"}`}>
               <div className="flex items-center justify-between">
-                <div><div className="text-xs text-muted-foreground font-semibold uppercase">Unassigned</div><div className={`text-3xl font-black mt-1 ${unassignedCount > 0 ? "text-red-600" : "text-green-600"}`}>{unassignedCount}</div></div>
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${unassignedCount > 0 ? "bg-red-50" : "bg-green-50"}`}>{unassignedCount > 0 ? <AlertTriangle className="h-6 w-6 text-red-500" /> : <CheckCircle className="h-6 w-6 text-green-500" />}</div>
+                <div><div className="text-xs text-muted-foreground font-semibold uppercase">Unassigned</div><div className={`text-3xl font-black mt-1 ${unassignedCount > 0 ? "text-blue-600" : "text-green-600"}`}>{unassignedCount}</div></div>
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${unassignedCount > 0 ? "bg-blue-50" : "bg-green-50"}`}>{unassignedCount > 0 ? <AlertTriangle className="h-6 w-6 text-blue-500" /> : <CheckCircle className="h-6 w-6 text-green-500" />}</div>
               </div>
             </Card>
             <Card className={`p-4 border-l-4 ${slaBreachedLeads.length > 0 ? "border-l-orange-500 animate-pulse" : "border-l-emerald-400"}`}>
@@ -371,7 +371,7 @@ const SmartLeadHub = () => {
         <span className="font-semibold">Integrations:</span>
         {webhookConfigs.map(w => (
           <span key={w.id} className="flex items-center gap-1">
-            <span className={`h-2 w-2 rounded-full ${w.is_active ? "bg-green-500" : "bg-red-400"}`} />
+            <span className={`h-2 w-2 rounded-full ${w.is_active ? "bg-green-500" : "bg-blue-400"}`} />
             {w.platform}
           </span>
         ))}
@@ -414,7 +414,7 @@ const SmartLeadHub = () => {
             </TableHeader>
             <TableBody>
               {filtered.map(lead => (
-                <TableRow key={lead.id} className={`${lead.status === "New" && !lead.assigned_to ? "bg-red-50/50" : ""} hover:bg-muted/30 transition-colors`}>
+                <TableRow key={lead.id} className={`${lead.status === "New" && !lead.assigned_to ? "bg-blue-50/50" : ""} hover:bg-muted/30 transition-colors`}>
                   <TableCell>
                     <div className="font-semibold">{lead.customer_name}</div>
                     <div className="text-xs text-muted-foreground">{lead.phone}</div>
@@ -425,7 +425,7 @@ const SmartLeadHub = () => {
                     {lead.assigned_to ? (
                       <div className="text-sm font-medium">{lead.assignedName}</div>
                     ) : (
-                      <span className="text-xs text-red-500 font-bold animate-pulse">⚠ Unassigned</span>
+                      <span className="text-xs text-blue-500 font-bold animate-pulse">⚠ Unassigned</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -435,7 +435,7 @@ const SmartLeadHub = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`text-xs font-mono font-bold ${lead.responseMinutes !== null ? (lead.responseMinutes <= 5 ? "text-green-600" : lead.responseMinutes <= 15 ? "text-amber-600" : "text-red-600") : "text-muted-foreground"}`}>
+                    <span className={`text-xs font-mono font-bold ${lead.responseMinutes !== null ? (lead.responseMinutes <= 5 ? "text-green-600" : lead.responseMinutes <= 15 ? "text-amber-600" : "text-blue-600") : "text-muted-foreground"}`}>
                       {lead.response_time_seconds ? formatTime(lead.response_time_seconds) : "—"}
                     </span>
                   </TableCell>
@@ -491,10 +491,10 @@ const SmartLeadHub = () => {
                   <div>
                     <div className="font-semibold text-sm">{r.employee_id?.name || "Unknown"}</div>
                     <div className="text-xs text-muted-foreground">{r.territory || "No territory"} · {r.shift_start}–{r.shift_end}</div>
-                    {r.leave_start && r.leave_end && <div className="text-xs text-red-500 mt-0.5">On leave: {r.leave_start} to {r.leave_end}</div>}
+                    {r.leave_start && r.leave_end && <div className="text-xs text-blue-500 mt-0.5">On leave: {r.leave_start} to {r.leave_end}</div>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`text-[10px] ${r.is_available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    <Badge variant="outline" className={`text-[10px] ${r.is_available ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
                       {r.is_available ? "Available" : "Unavailable"}
                     </Badge>
                     <div className="text-xs text-muted-foreground">Max {r.max_daily_leads}/day</div>
@@ -519,7 +519,7 @@ const SmartLeadHub = () => {
           {[
             { name: "Just Dial", method: "Webhook push", desc: "JD account manager configures endpoint", color: "border-yellow-300 bg-yellow-50" },
             { name: "Meta Ads", method: "Facebook Lead Ads API", desc: "Leadgen event subscription", color: "border-blue-300 bg-blue-50" },
-            { name: "Google Ads", method: "Lead Form Extensions", desc: "Webhook integration", color: "border-red-300 bg-red-50" },
+            { name: "Google Ads", method: "Lead Form Extensions", desc: "Webhook integration", color: "border-blue-300 bg-blue-50" },
             { name: "OEM CRM", method: "API pull / Email parser", desc: "Brand-specific setup", color: "border-purple-300 bg-purple-50" },
           ].map(p => {
             const config = webhookConfigs.find(w => w.platform === p.name);
@@ -553,7 +553,7 @@ const SmartLeadHub = () => {
                     log.event_type === 'auto_assigned' ? 'bg-blue-500' :
                     log.event_type === 'manual_assigned' ? 'bg-amber-500' :
                     log.event_type === 'contacted' ? 'bg-green-500' :
-                    log.event_type === 'sla_breach' ? 'bg-red-500' :
+                    log.event_type === 'sla_breach' ? 'bg-blue-500' :
                     log.event_type === 'escalated' ? 'bg-orange-500' :
                     log.event_type === 'converted' ? 'bg-emerald-600' : 'bg-gray-400'
                   }`} />

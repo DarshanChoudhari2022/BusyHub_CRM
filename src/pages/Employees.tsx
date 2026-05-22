@@ -406,9 +406,9 @@ const Employees = () => {
                         value={form.phone} 
                         onChange={(e) => { setForm({ ...form, phone: e.target.value }); setPhoneError(""); }} 
                         placeholder="+91 98765 43210"
-                        className={phoneError ? "border-red-500" : ""}
+                        className={phoneError ? "border-blue-500" : ""}
                       />
-                      {phoneError && <p className="text-[11px] text-red-500 mt-0.5">{phoneError}</p>}
+                      {phoneError && <p className="text-[11px] text-blue-500 mt-0.5">{phoneError}</p>}
                     </div>
                     <div><Label>Email *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Required for Login" /></div>
                   </div>
@@ -516,7 +516,7 @@ const Employees = () => {
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); editEmployee(emp); }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(emp); }}>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-50" onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(emp); }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                       </Button>
                       <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -623,7 +623,7 @@ const Employees = () => {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                                   </Button>
                                   <Button 
-                                    size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                    size="sm" variant="ghost" className="h-7 w-7 p-0 text-blue-500 hover:bg-blue-50"
                                     onClick={() => {
                                       withShield(() => {
                                         deleteWorkLog(log.id);
@@ -678,7 +678,7 @@ const Employees = () => {
                           {emp.society_data.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map((visit: any, i: number) => {
                             const vStatus = visit.verification_status || 'pending';
                             const vCls = vStatus === 'verified_real' ? 'bg-green-50 text-green-700 border-green-200'
-                                       : vStatus === 'verified_fake' ? 'bg-red-50 text-red-700 border-red-200'
+                                       : vStatus === 'verified_fake' ? 'bg-blue-50 text-blue-700 border-blue-200'
                                        : vStatus === 'unreachable'   ? 'bg-slate-50 text-slate-600 border-slate-200'
                                        : 'bg-amber-50 text-amber-700 border-amber-200';
                             const vLabel = vStatus === 'verified_real' ? 'Real'
@@ -696,7 +696,7 @@ const Employees = () => {
                                   {visit.contact_person && <div><span className="font-medium text-foreground">Contact:</span> {visit.contact_person} {visit.contact_phone && `(${visit.contact_phone})`}</div>}
                                   {visit.number_of_flats && <div><span className="font-medium text-foreground">Flats:</span> {visit.number_of_flats}</div>}
                                   {visit.is_mock && (
-                                    <div className="text-red-600 font-medium text-[10px]">⚠ Mock GPS detected</div>
+                                    <div className="text-blue-600 font-medium text-[10px]">⚠ Mock GPS detected</div>
                                   )}
                                   <div className="text-[10px] text-muted-foreground mt-2">{new Date(visit.created_at).toLocaleDateString()} {new Date(visit.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                 </div>

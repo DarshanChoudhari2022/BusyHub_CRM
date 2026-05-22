@@ -22,7 +22,7 @@ const KPICard = ({ icon: Icon, label, value, hint, color }: {
   </Card>
 );
 
-const PIE_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EF4444", "#F97316", "#06B6D4"];
+const PIE_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#2563EB", "#F97316", "#06B6D4"];
 
 export default function Analytics() {
   const [clients, setClients] = useState<any[]>([]);

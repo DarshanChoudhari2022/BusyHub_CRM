@@ -27,7 +27,7 @@ interface PageCalendarEvent {
 }
 
 const TYPE_COLORS: Record<CalendarEventType, { bg: string; text: string; dot: string }> = {
-  Shoot: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+  Shoot: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
   Meeting: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
   Deadline: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
   Holiday: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },

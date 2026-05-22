@@ -157,7 +157,7 @@ async function savePDFMobile(doc: jsPDF, filename: string) {
 }
 
 // ── Brand Colors ──────────────────────────────────────────────
-const BRAND_RED = { r: 200, g: 16, b: 32 };
+const BRAND_COLOR = { r: 14, g: 165, b: 233 };
 const BRAND_BLACK = { r: 26, g: 26, b: 26 };
 const BRAND_GRAY = { r: 120, g: 120, b: 120 };
 
@@ -272,7 +272,7 @@ function addLetterhead(doc: jsPDF, logoBase64: string | null) {
   const pageW = doc.internal.pageSize.getWidth();
 
   // Decorative Top Accent
-  doc.setFillColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setFillColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.rect(0, 0, pageW, 1.5, "F");
 
   // Logo
@@ -297,7 +297,7 @@ function addLetterhead(doc: jsPDF, logoBase64: string | null) {
       doc.addImage(logoBase64, "JPEG", 15, 8, 35, 12, undefined, 'FAST');
     }
   } else {
-    doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+    doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("BuzyHub", 15, 20);
@@ -319,7 +319,7 @@ function addLetterhead(doc: jsPDF, logoBase64: string | null) {
   doc.setFontSize(7.5);
   doc.text(`${COMPANY.phone1}  |  ${COMPANY.phone2}  |  ${COMPANY.email}`, rX, 21, { align: "right" });
   
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   const displayUrl = COMPANY.website.replace("https://", "").replace(/\/$/, "");
@@ -347,7 +347,7 @@ function addFooter(doc: jsPDF, pageNum: number) {
   doc.setTextColor(BRAND_GRAY.r, BRAND_GRAY.g, BRAND_GRAY.b);
   doc.text("BuzyHub ADVERTISING", centerX, footerY + 6, { align: "center" });
 
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.setFontSize(9);
   const footerUrl = COMPANY.website.replace("https://", "").replace(/\/$/, "");
   doc.text(footerUrl, centerX, footerY + 11, { align: "center" });
@@ -368,7 +368,7 @@ function addFooter(doc: jsPDF, pageNum: number) {
   const waTextW = doc.getTextWidth(waText);
   doc.link(centerX - waTextW / 2, footerY + 18, waTextW, 5, { url: waUrl });
 
-  doc.setFillColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setFillColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.rect(centerX - 20, pageH - 5, 40, 0.5, "F");
 
   doc.setFontSize(8);
@@ -394,7 +394,7 @@ export async function generateQuotationPDF(q: any) {
   const docNum = q.quoteNumber || q.quote_number || q.number || "";
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.text(docNum, pageW - 15, y, { align: "right" });
   y += 10;
 
@@ -439,7 +439,7 @@ export async function generateQuotationPDF(q: any) {
       fmtINR(item.rate || 0),
       fmtINR(item.amount || 0),
     ]),
-    headStyles: { fillColor: [BRAND_RED.r, BRAND_RED.g, BRAND_RED.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5, cellPadding: 3 },
+    headStyles: { fillColor: [BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5, cellPadding: 3 },
     bodyStyles: { fontSize: 8.5, cellPadding: 3, textColor: [BRAND_BLACK.r, BRAND_BLACK.g, BRAND_BLACK.b] },
     alternateRowStyles: { fillColor: [252, 252, 252] },
     columnStyles: {
@@ -485,11 +485,11 @@ export async function generateQuotationPDF(q: any) {
     y += 6;
   }
 
-  doc.setDrawColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setDrawColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.setLineWidth(0.5);
   doc.line(totalsX - 2, y - 2, pageW - 12, y - 2);
 
-  doc.setFillColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setFillColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.roundedRect(totalsX - 2, y, pageW - totalsX + 2 - 12, 10, 1, 1, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -512,7 +512,7 @@ export async function generateQuotationPDF(q: any) {
       y += 7;
 
       const balanceDue = totalVal - amountPaid;
-      doc.setDrawColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+      doc.setDrawColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
       doc.setLineWidth(0.3);
       doc.line(totalsX - 2, y - 2, pageW - 12, y - 2);
 
@@ -523,7 +523,7 @@ export async function generateQuotationPDF(q: any) {
         doc.text("Balance Due:", totalsX, y + 2);
         doc.text("PAID IN FULL", pageW - 15, y + 2, { align: "right" });
       } else {
-        doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+        doc.setTextColor(200, 16, 32); // Keep red for unpaid balance due
         doc.text("Balance Due:", totalsX, y + 2);
         doc.text(fmtINR(balanceDue), pageW - 15, y + 2, { align: "right" });
       }
@@ -571,7 +571,7 @@ export async function generateQuotationPDF(q: any) {
     doc.roundedRect(12, y, pageW - 24, bankBoxHeight, 2, 2, "S");
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+    doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
     doc.text("BANK DETAILS FOR PAYMENT", 16, y + 6);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
@@ -665,7 +665,7 @@ export async function generatePartnerAgreementPDF(partner: Partner) {
   let y = 42;
 
   // ── Title Header ──
-  doc.setFillColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setFillColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.rect(margin, y, contentW, 10, "F");
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
@@ -711,7 +711,7 @@ export async function generatePartnerAgreementPDF(partner: Partner) {
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.text("ENGAGEMENT OVERVIEW", margin + 5, y + 8);
 
   doc.setFontSize(9);
@@ -742,7 +742,7 @@ export async function generatePartnerAgreementPDF(partner: Partner) {
   const rateText = partner.commissionType === "Percentage" 
     ? `${partner.commissionRate}% of Net Project Value` 
     : `${fmtINR(partner.commissionRate || 0)} Flat per Project`;
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.text(rateText, margin + 45, gridY);
 
   y += 55;
@@ -753,7 +753,7 @@ export async function generatePartnerAgreementPDF(partner: Partner) {
   doc.setTextColor(BRAND_BLACK.r, BRAND_BLACK.g, BRAND_BLACK.b);
   doc.text("TERMS & CONDITIONS", margin, y);
   y += 2;
-  doc.setDrawColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setDrawColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.setLineWidth(0.8);
   doc.line(margin, y, margin + 30, y);
   y += 8;
@@ -794,7 +794,7 @@ export async function generatePartnerAgreementPDF(partner: Partner) {
   doc.roundedRect(margin, y, contentW, 25, 2, 2, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.text("PARTNER SETTLEMENT DETAILS (As Provided)", margin + 5, y + 7);
   
   doc.setFontSize(8);
@@ -893,7 +893,7 @@ export async function generateReceiptPDF(receipt: {
   // Receipt reference number
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setTextColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   const receiptRef = `RCPT/${formatDate(receipt.date || new Date()).replace(/\//g, '')}/${receipt.invoiceNo || 'GEN'}`;
   doc.text(`Ref: ${receiptRef}`, pageW - margin, y, { align: "right" });
   y += 14;
@@ -939,7 +939,7 @@ export async function generateReceiptPDF(receipt: {
   y += infoBoxH + 10;
 
   // ── Amount Section (Red Banner) ──
-  doc.setFillColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setFillColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.roundedRect(margin, y, contentW, 28, 2, 2, "F");
   
   doc.setFontSize(9);
@@ -971,7 +971,7 @@ export async function generateReceiptPDF(receipt: {
   doc.setTextColor(BRAND_BLACK.r, BRAND_BLACK.g, BRAND_BLACK.b);
   doc.text("Account Summary", margin, y);
   y += 2;
-  doc.setDrawColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setDrawColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.setLineWidth(0.6);
   doc.line(margin, y, margin + 25, y);
   y += 7;
@@ -1003,7 +1003,7 @@ export async function generateReceiptPDF(receipt: {
     "Balance Outstanding:",
     outstanding,
     true,
-    outstanding > 0 ? BRAND_RED : {r:34,g:150,b:80}
+    outstanding > 0 ? {r:200,g:16,b:32} : {r:34,g:150,b:80} // Keep red for unpaid outstanding balance
   );
 
   y = balY + 8;
@@ -1039,7 +1039,7 @@ export async function generateReceiptPDF(receipt: {
   y = Math.max(y + 15, 235);
 
   // Signature line
-  doc.setDrawColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
+  doc.setDrawColor(BRAND_COLOR.r, BRAND_COLOR.g, BRAND_COLOR.b);
   doc.setLineWidth(0.5);
   doc.line(margin, y, margin + 55, y);
   

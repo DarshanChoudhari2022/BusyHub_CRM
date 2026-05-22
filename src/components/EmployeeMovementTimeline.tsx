@@ -220,7 +220,7 @@ function TimelineItem({ event: evt, isLast }: { event: TimelineEvent; isLast: bo
     shift_start: 'bg-green-500',
     shift_end: 'bg-slate-500',
     visit: 'bg-primary',
-    gps_ping: evt.meta?.is_mock ? 'bg-red-400' : 'bg-blue-400',
+    gps_ping: evt.meta?.is_mock ? 'bg-blue-400' : 'bg-blue-400',
   }[evt.type];
 
   const icon = {
@@ -263,7 +263,7 @@ function TimelineItem({ event: evt, isLast }: { event: TimelineEvent; isLast: bo
               <span className="text-[10px] text-muted-foreground">±{Math.round(evt.accuracy)}m</span>
             )}
             {evt.meta?.is_mock && (
-              <span className="text-[10px] text-red-500 font-semibold flex items-center gap-0.5">
+              <span className="text-[10px] text-blue-500 font-semibold flex items-center gap-0.5">
                 <AlertTriangle className="w-2.5 h-2.5" /> Mock GPS
               </span>
             )}
@@ -288,7 +288,7 @@ function TimelineItem({ event: evt, isLast }: { event: TimelineEvent; isLast: bo
                       variant="outline"
                       className={`text-[9px] py-0 h-4 ${
                         evt.meta.verification_status === 'verified_real' ? 'bg-green-50 text-green-700 border-green-200' :
-                        evt.meta.verification_status === 'verified_fake' ? 'bg-red-50 text-red-700 border-red-200' :
+                        evt.meta.verification_status === 'verified_fake' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                         'bg-amber-50 text-amber-700 border-amber-200'
                       }`}
                     >

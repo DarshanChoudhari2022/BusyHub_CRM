@@ -24,7 +24,7 @@ import { usePrivacyShield } from "@/contexts/PrivacyShieldContext";
 import type { Lead, LeadStage, LeadHeat, ClientCategory, LeadQuotationStatus, LeadPaymentStatus } from "@/types";
 
 const HEAT_ICONS: Record<LeadHeat, { icon: React.ElementType; color: string; label: string }> = {
-  Hot: { icon: Flame, color: "text-red-500", label: "Hot" },
+  Hot: { icon: Flame, color: "text-blue-500", label: "Hot" },
   Warm: { icon: Thermometer, color: "text-amber-500", label: "Warm" },
   Cold: { icon: Snowflake, color: "text-blue-400", label: "Cold" },
 };
@@ -35,7 +35,7 @@ const STAGE_COLORS: Record<LeadStage, string> = {
   "Quotation Sent": "border-blue-200",
   Negotiation: "border-orange-200",
   Converted: "border-green-200",
-  Lost: "border-red-200",
+  Lost: "border-blue-200",
 };
 
 const STAGE_HEADER_COLORS: Record<LeadStage, string> = {
@@ -44,7 +44,7 @@ const STAGE_HEADER_COLORS: Record<LeadStage, string> = {
   "Quotation Sent": "bg-blue-100 text-blue-700",
   Negotiation: "bg-orange-100 text-orange-700",
   Converted: "bg-green-100 text-green-700",
-  Lost: "bg-red-100 text-red-700",
+  Lost: "bg-blue-100 text-blue-700",
 };
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -411,13 +411,13 @@ const Leads = () => {
                   )}
                   <div>
                     <Label>Phone</Label>
-                    <Input value={form.phone} onChange={(e) => { setForm({ ...form, phone: e.target.value }); setPhoneError(""); }} placeholder="+91 98765 43210" className={phoneError ? "border-red-500" : ""} />
-                    {phoneError && <p className="text-[11px] text-red-500 mt-0.5">{phoneError}</p>}
+                    <Input value={form.phone} onChange={(e) => { setForm({ ...form, phone: e.target.value }); setPhoneError(""); }} placeholder="+91 98765 43210" className={phoneError ? "border-blue-500" : ""} />
+                    {phoneError && <p className="text-[11px] text-blue-500 mt-0.5">{phoneError}</p>}
                   </div>
                   <div>
                     <Label>WhatsApp</Label>
-                    <Input value={form.whatsapp} onChange={(e) => { setForm({ ...form, whatsapp: e.target.value, whatsappError: "" }); }} placeholder="+91 98765 43210" className={form.whatsappError ? "border-red-500" : ""} />
-                    {form.whatsappError && <p className="text-[11px] text-red-500 mt-0.5">{form.whatsappError}</p>}
+                    <Input value={form.whatsapp} onChange={(e) => { setForm({ ...form, whatsapp: e.target.value, whatsappError: "" }); }} placeholder="+91 98765 43210" className={form.whatsappError ? "border-blue-500" : ""} />
+                    {form.whatsappError && <p className="text-[11px] text-blue-500 mt-0.5">{form.whatsappError}</p>}
                   </div>
                   <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                   <div><Label>Source</Label>
@@ -501,7 +501,7 @@ const Leads = () => {
                         key={lead.id}
                         className={`p-3 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden ${
                           new Date(lead.nextCallDate) < new Date(new Date().setHours(0,0,0,0)) 
-                          ? "ring-1 ring-red-400 bg-red-50/10" 
+                          ? "ring-1 ring-blue-400 bg-blue-50/10" 
                           : aging 
                           ? "ring-1 ring-primary/30" 
                           : ""
@@ -510,7 +510,7 @@ const Leads = () => {
                       >
                         {new Date(lead.nextCallDate) < new Date(new Date().setHours(0,0,0,0)) && (
                           <div className="absolute top-0 right-0">
-                            <div className="bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg animate-pulse">OVERDUE</div>
+                            <div className="bg-blue-600 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg animate-pulse">OVERDUE</div>
                           </div>
                         )}
                         <div className="flex items-start justify-between mb-1">
@@ -559,7 +559,7 @@ const Leads = () => {
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleDeleteLead(lead); }}
-                                className="p-1 hover:bg-red-50 rounded text-muted-foreground hover:text-red-600"
+                                className="p-1 hover:bg-blue-50 rounded text-muted-foreground hover:text-blue-600"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>
@@ -573,7 +573,7 @@ const Leads = () => {
                           {lead.nextCallDate && (
                             <div className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                               new Date(lead.nextCallDate) < new Date(new Date().setHours(0,0,0,0)) 
-                                ? "bg-red-100 text-red-600" 
+                                ? "bg-blue-100 text-blue-600" 
                                 : lead.nextCallDate === new Date().toISOString().slice(0, 10)
                                 ? "bg-amber-100 text-amber-600"
                                 : "bg-blue-50 text-blue-600"
@@ -620,14 +620,14 @@ const Leads = () => {
                 return (
                   <TableRow 
                     key={l.id} 
-                    className={`cursor-pointer transition-colors ${isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-muted/30"}`} 
+                    className={`cursor-pointer transition-colors ${isOverdue ? "bg-blue-50/30 hover:bg-blue-50/50" : "hover:bg-muted/30"}`} 
                     onClick={() => setDetailLead(l)}
                   >
                     <TableCell>
                       <div className="font-semibold flex items-center gap-2">
                         <Masked>{l.name}</Masked>
                         {l.isSmartLead && <Badge variant="secondary" className="h-4 text-[8px] bg-purple-100 text-purple-700 border-purple-200">SMART</Badge>}
-                        {isOverdue && <Badge className="h-4 text-[8px] bg-red-600 animate-pulse border-0">URGENT</Badge>}
+                        {isOverdue && <Badge className="h-4 text-[8px] bg-blue-600 animate-pulse border-0">URGENT</Badge>}
                       </div>
                       <div className="text-[10px] text-muted-foreground">{l.assignedToName}</div>
                     </TableCell>
@@ -638,10 +638,10 @@ const Leads = () => {
                     <TableCell className="text-right font-bold text-primary"><Masked placeholder="₹•••••">{formatINR(l.estimatedValue)}</Masked></TableCell>
                     <TableCell>
                       {l.nextCallDate ? (
-                        <div className={`flex items-center gap-1.5 font-bold text-xs ${isOverdue ? "text-red-600" : isToday ? "text-amber-600" : "text-blue-600"}`}>
+                        <div className={`flex items-center gap-1.5 font-bold text-xs ${isOverdue ? "text-blue-600" : isToday ? "text-amber-600" : "text-blue-600"}`}>
                           <div className="relative">
                             <BellRing className={`h-3.5 w-3.5 ${isOverdue || isToday ? "animate-pulse" : ""}`} />
-                            {(isOverdue || isToday) && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
+                            {(isOverdue || isToday) && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
                           </div>
                           {formatDateDDMMYYYY(new Date(l.nextCallDate))}
                         </div>
@@ -651,7 +651,7 @@ const Leads = () => {
                       {l.paymentStatus !== "Not Due" ? (
                         <Badge variant="outline" className={`text-[10px] font-bold ${
                           l.paymentStatus === "Paid" ? "bg-green-100 text-green-700 border-green-200" :
-                          l.paymentStatus === "Overdue" ? "bg-red-100 text-red-700 border-red-200 animate-pulse" :
+                          l.paymentStatus === "Overdue" ? "bg-blue-100 text-blue-700 border-blue-200 animate-pulse" :
                           "bg-amber-100 text-amber-700 border-amber-200"
                         }`}>{l.paymentStatus}</Badge>
                       ) : "—"}
@@ -692,7 +692,7 @@ const Leads = () => {
                         </button>
                         <button 
                           onClick={() => handleDeleteLead(l)}
-                          className="p-1.5 hover:bg-red-50 rounded text-muted-foreground hover:text-red-600"
+                          className="p-1.5 hover:bg-blue-50 rounded text-muted-foreground hover:text-blue-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -761,7 +761,7 @@ const Leads = () => {
                   }} title="Edit Lead">
                      <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2 text-red-600 hover:bg-red-50" onClick={() => handleDeleteLead(detailLead.id)} title="Delete Lead">
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-blue-600 hover:bg-blue-50" onClick={() => handleDeleteLead(detailLead.id)} title="Delete Lead">
                      <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -864,12 +864,12 @@ const Leads = () => {
                             }
                           }}
                         >
-                          <Bell className={`h-2.5 w-2.5 ${detailLead.nextCallDate === new Date().toISOString().slice(0, 10) ? "text-red-500 animate-bounce" : "text-amber-500"}`} />
+                          <Bell className={`h-2.5 w-2.5 ${detailLead.nextCallDate === new Date().toISOString().slice(0, 10) ? "text-blue-500 animate-bounce" : "text-amber-500"}`} />
                         </Button>
                       </div>
                       <Input 
                         type="date" 
-                        className={`h-8 text-[11px] bg-white border-amber-100 focus:ring-amber-500 ${detailLead.nextCallDate && new Date(detailLead.nextCallDate) <= new Date() ? "border-red-300 ring-1 ring-red-100" : ""}`}
+                        className={`h-8 text-[11px] bg-white border-amber-100 focus:ring-amber-500 ${detailLead.nextCallDate && new Date(detailLead.nextCallDate) <= new Date() ? "border-blue-300 ring-1 ring-blue-100" : ""}`}
                         value={detailLead.nextCallDate || ""} 
                         onChange={(e) => {
                           const val = e.target.value;

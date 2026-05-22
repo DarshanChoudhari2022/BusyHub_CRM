@@ -176,8 +176,8 @@ export default function FieldReports() {
           <div className="text-xs text-muted-foreground">Verified Real</div>
         </Card>
         <Card className="p-4 text-center">
-          <ShieldX className="w-5 h-5 mx-auto mb-1 text-red-600" />
-          <div className="text-2xl font-bold text-red-600">{summaryStats.fake}</div>
+          <ShieldX className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+          <div className="text-2xl font-bold text-blue-600">{summaryStats.fake}</div>
           <div className="text-xs text-muted-foreground">Verified Fake</div>
         </Card>
         <Card className="p-4 text-center">
@@ -237,7 +237,7 @@ export default function FieldReports() {
                     <TableCell className="font-medium">{e.name}</TableCell>
                     <TableCell className="text-center font-bold">{e.visits}</TableCell>
                     <TableCell className="text-center text-green-600">{e.real}</TableCell>
-                    <TableCell className="text-center text-red-600">{e.fake}</TableCell>
+                    <TableCell className="text-center text-blue-600">{e.fake}</TableCell>
                     <TableCell className="text-center text-amber-600">{e.pending}</TableCell>
                     <TableCell className="text-center">{Math.round(e.hours * 10) / 10}h</TableCell>
                   </TableRow>
@@ -286,7 +286,7 @@ export default function FieldReports() {
                         variant="outline"
                         className={
                           st === "verified_real" ? "bg-green-50 text-green-700 border-green-200" :
-                          st === "verified_fake" ? "bg-red-50 text-red-700 border-red-200" :
+                          st === "verified_fake" ? "bg-blue-50 text-blue-700 border-blue-200" :
                           "bg-amber-50 text-amber-700 border-amber-200"
                         }
                       >

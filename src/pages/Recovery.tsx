@@ -319,7 +319,7 @@ const Recovery = () => {
                   {r.received ? (
                     <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 text-xs">Paid</Badge>
                   ) : (
-                    <Badge variant="outline" className={`text-xs ${r.daysOverdue > 30 ? "bg-red-100 text-red-700 border-red-200" : r.daysOverdue > 15 ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                    <Badge variant="outline" className={`text-xs ${r.daysOverdue > 30 ? "bg-blue-100 text-blue-700 border-blue-200" : r.daysOverdue > 15 ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-gray-100 text-gray-600 border-gray-200"}`}>
                       {r.daysOverdue}d
                     </Badge>
                   )}

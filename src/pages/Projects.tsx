@@ -233,14 +233,14 @@ const Projects = () => {
       case "Active": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
       case "Review": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "Completed": return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
-      case "On Hold": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      case "On Hold": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
       default: return "bg-gray-100 text-gray-700";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "Urgent": return "text-red-600";
+      case "Urgent": return "text-blue-600";
       case "High": return "text-orange-600";
       case "Medium": return "text-yellow-600";
       case "Low": return "text-blue-600";
@@ -522,7 +522,7 @@ const Projects = () => {
                         Edit Project
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        className="text-red-600" 
+                        className="text-blue-600" 
                         onClick={(e) => confirmDeleteProject(e, project.id)}
                       >
                         Delete Project

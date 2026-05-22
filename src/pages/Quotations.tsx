@@ -29,10 +29,10 @@ const STATUS_COLORS: Record<string, string> = {
   Draft: "bg-gray-100 text-gray-600 border-gray-200",
   Sent: "bg-blue-100 text-blue-700 border-blue-200",
   Approved: "bg-green-100 text-green-700 border-green-200",
-  Rejected: "bg-red-100 text-red-700 border-red-200",
+  Rejected: "bg-blue-100 text-blue-700 border-blue-200",
   "Converted to Bill": "bg-emerald-100 text-emerald-700 border-emerald-200",
   Paid: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Overdue: "bg-red-100 text-red-700 border-red-200",
+  Overdue: "bg-blue-100 text-blue-700 border-blue-200",
 };
 
 const emptyItem = (): LineItem => ({ id: crypto.randomUUID(), serviceName: "", description: "", quantity: 1, rate: 0, amount: 0 });
@@ -946,7 +946,7 @@ const Quotations = () => {
                           <Button size="sm" variant="ghost" className="h-8 px-2 text-green-600 hover:bg-green-50" onClick={() => updateStatus(q, "Approved")}>
                             <CheckCircle className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600 hover:bg-red-50" onClick={() => updateStatus(q, "Rejected")}>
+                          <Button size="sm" variant="ghost" className="h-8 px-2 text-blue-600 hover:bg-blue-50" onClick={() => updateStatus(q, "Rejected")}>
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </>
@@ -960,7 +960,7 @@ const Quotations = () => {
                       <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => handleEdit(q)} title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></Button>
                       <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => downloadPDF(q)} title="Download"><Download className="h-4 w-4" /></Button>
                       <Button size="sm" variant="ghost" className="h-8 px-2 text-green-600" onClick={() => shareViaWhatsApp(q)} title="WhatsApp"><Send className="h-4 w-4" /></Button>
-                      <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600 hover:bg-red-50" onClick={() => deleteQuotation(q)} title="Delete"><Trash2 className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2 text-blue-600 hover:bg-blue-50" onClick={() => deleteQuotation(q)} title="Delete"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                 </TableCell>
               </TableRow>
@@ -1178,7 +1178,7 @@ const Quotations = () => {
               {/* Summary */}
               <div className="p-3 bg-muted/30 rounded-lg text-sm space-y-1">
                 <div className="flex justify-between"><span className="text-muted-foreground">Amount Received:</span><span className="font-bold text-green-600">{formatINR(distBillTarget.amount_paid || 0)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Total Expenses:</span><span className="font-semibold text-red-500">−{formatINR(distExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0))}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Total Expenses:</span><span className="font-semibold text-blue-500">−{formatINR(distExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0))}</span></div>
                 <div className="flex justify-between border-t pt-1"><span className="font-semibold">Net to Distribute:</span><span className="font-bold text-primary">{formatINR((distBillTarget.amount_paid || 0) - distExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0))}</span></div>
                 {distBillTarget.received_by_name && <div className="text-[10px] text-muted-foreground">Custodian: {distBillTarget.received_by_name}</div>}
               </div>
@@ -1186,7 +1186,7 @@ const Quotations = () => {
               {/* Expenses Section */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Label className="flex items-center gap-1.5 text-sm font-semibold"><DollarSign className="h-3.5 w-3.5 text-red-500" />Bill Expenses</Label>
+                  <Label className="flex items-center gap-1.5 text-sm font-semibold"><DollarSign className="h-3.5 w-3.5 text-blue-500" />Bill Expenses</Label>
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setDistExpenses(ex => [...ex, { id: crypto.randomUUID(), title: "", amount: "", category: "Other" }])}>
                     <Plus className="h-3 w-3 mr-1" />Add Expense
                   </Button>
@@ -1204,7 +1204,7 @@ const Quotations = () => {
                       </Select>
                     </div>
                     <div className="col-span-3"><Input type="number" placeholder="₹" value={ex.amount} onChange={e => setDistExpenses(prev => prev.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} className="h-8 text-xs" /></div>
-                    <div className="col-span-1 flex justify-center"><Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => setDistExpenses(prev => prev.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button></div>
+                    <div className="col-span-1 flex justify-center"><Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-blue-500" onClick={() => setDistExpenses(prev => prev.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button></div>
                   </div>
                 ))}
               </div>
@@ -1233,12 +1233,12 @@ const Quotations = () => {
                     </div>
                     <div className="col-span-3"><Input placeholder="Role" value={sh.job_role} onChange={e => setDistShares(prev => prev.map((x, j) => j === i ? { ...x, job_role: e.target.value } : x))} className="h-8 text-xs" /></div>
                     <div className="col-span-4"><Input type="number" placeholder="₹ Amount" value={sh.amount} onChange={e => setDistShares(prev => prev.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} className="h-8 text-xs" /></div>
-                    <div className="col-span-1 flex justify-center"><Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => setDistShares(prev => prev.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button></div>
+                    <div className="col-span-1 flex justify-center"><Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-blue-500" onClick={() => setDistShares(prev => prev.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button></div>
                   </div>
                 ))}
                 <div className="flex justify-between text-xs mt-2 text-muted-foreground">
                   <span>Total allocated:</span>
-                  <span className={distShares.reduce((s, sh) => s + (Number(sh.amount) || 0), 0) > (distBillTarget.amount_paid || 0) - distExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) + 0.01 ? "text-red-500 font-bold" : "font-semibold"}>
+                  <span className={distShares.reduce((s, sh) => s + (Number(sh.amount) || 0), 0) > (distBillTarget.amount_paid || 0) - distExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) + 0.01 ? "text-blue-500 font-bold" : "font-semibold"}>
                     {formatINR(distShares.reduce((s, sh) => s + (Number(sh.amount) || 0), 0))}
                   </span>
                 </div>

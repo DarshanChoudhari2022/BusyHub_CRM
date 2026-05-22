@@ -160,12 +160,12 @@ export function LeadTasks({ leadId, initialTasks, employees, onUpdate }: LeadTas
               key={task.id} 
               className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all group ${
                 task.status === "Done" ? "bg-muted/20 border-transparent opacity-60" : 
-                isOverdue ? "bg-red-50 border-red-100 shadow-sm" : "bg-white border-muted shadow-sm hover:shadow-md"
+                isOverdue ? "bg-blue-50 border-blue-100 shadow-sm" : "bg-white border-muted shadow-sm hover:shadow-md"
               }`}
             >
               <button 
                 onClick={() => toggleTaskStatus(task)}
-                className={`mt-0.5 transition-transform active:scale-90 ${task.status === "Done" ? "text-green-500" : isOverdue ? "text-red-500" : "text-muted-foreground hover:text-primary"}`}
+                className={`mt-0.5 transition-transform active:scale-90 ${task.status === "Done" ? "text-green-500" : isOverdue ? "text-blue-500" : "text-muted-foreground hover:text-primary"}`}
               >
                 {task.status === "Done" ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
               </button>
@@ -180,10 +180,10 @@ export function LeadTasks({ leadId, initialTasks, employees, onUpdate }: LeadTas
                   </div>
                   <div className={`flex items-center gap-1 text-[10px] font-semibold ${
                     task.status === "Done" ? "text-muted-foreground" :
-                    isOverdue ? "text-red-600" : isToday ? "text-amber-600" : "text-blue-600"
+                    isOverdue ? "text-blue-600" : isToday ? "text-amber-600" : "text-blue-600"
                   }`}>
                     <Clock className="h-3 w-3" /> {formatDateDDMMYYYY(new Date((task as any).due_date || task.dueDate))}
-                    {isOverdue && <Badge className="h-3.5 px-1 text-[8px] bg-red-600 border-0 ml-1">OVERDUE</Badge>}
+                    {isOverdue && <Badge className="h-3.5 px-1 text-[8px] bg-blue-600 border-0 ml-1">OVERDUE</Badge>}
                     {isToday && <Badge className="h-3.5 px-1 text-[8px] bg-amber-500 border-0 ml-1">TODAY</Badge>}
                   </div>
                 </div>
@@ -192,7 +192,7 @@ export function LeadTasks({ leadId, initialTasks, employees, onUpdate }: LeadTas
               <Button 
                 size="sm" 
                 variant="ghost" 
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => handleDeleteTask(task.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />

@@ -359,8 +359,8 @@ const ProjectDetail = () => {
   });
 
   if (isProjectLoading) return <div className="p-4 md:p-8 text-center">Loading project...</div>;
-  if (isProjectError) return <div className="p-4 md:p-8 text-center text-red-500">Failed to load project. Please go back and try again.</div>;
-  if (!project) return <div className="p-4 md:p-8 text-center text-red-500">Project not found</div>;
+  if (isProjectError) return <div className="p-4 md:p-8 text-center text-blue-500">Failed to load project. Please go back and try again.</div>;
+  if (!project) return <div className="p-4 md:p-8 text-center text-blue-500">Project not found</div>;
 
   // Linked-bills aggregates — declared here so they can be used in calculations below
   const linkedBillsCount = (linkedBills || []).length;
@@ -657,7 +657,7 @@ const ProjectDetail = () => {
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case "Urgent": return <AlertCircle className="h-3 w-3 text-red-500" />;
+      case "Urgent": return <AlertCircle className="h-3 w-3 text-blue-500" />;
       case "High": return <AlertCircle className="h-3 w-3 text-orange-500" />;
       default: return null;
     }
@@ -959,7 +959,7 @@ const ProjectDetail = () => {
                                   Move to {c}
                                 </DropdownMenuItem>
                               ))}
-                              <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTaskInfo(task.id)}>
+                              <DropdownMenuItem className="text-blue-600" onClick={() => setDeleteTaskInfo(task.id)}>
                                 Delete Task
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -1060,7 +1060,7 @@ const ProjectDetail = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600" onClick={() => setDeleteTaskInfo(task.id)}>Delete</DropdownMenuItem>
+                            <DropdownMenuItem className="text-blue-600" onClick={() => setDeleteTaskInfo(task.id)}>Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -1089,7 +1089,7 @@ const ProjectDetail = () => {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground uppercase">Actual Expenses</Label>
-                    <div className="text-2xl font-bold text-red-500">₹{(projectExpensesTotal + totalCommission + totalSaleExpenses).toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-blue-500">₹{(projectExpensesTotal + totalCommission + totalSaleExpenses).toLocaleString()}</div>
                     <div className="text-[10px] text-muted-foreground">Project + Commission + Sale</div>
                   </div>
                 </div>
@@ -1098,11 +1098,11 @@ const ProjectDetail = () => {
                   <div className="flex justify-between items-end">
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground uppercase">Net Profit</Label>
-                      <div className={`text-xl font-bold ${netSalesProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      <div className={`text-xl font-bold ${netSalesProfit >= 0 ? "text-green-600" : "text-blue-600"}`}>
                         ₹{netSalesProfit.toLocaleString()}
                       </div>
                     </div>
-                    <Badge className={`${netSalesProfit >= 0 ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}>
+                    <Badge className={`${netSalesProfit >= 0 ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-blue-500/10 text-blue-600 border-blue-500/20"}`}>
                       {(totalEarnings + totalExtraCharges) > 0
                         ? ((netSalesProfit / (totalEarnings + totalExtraCharges)) * 100).toFixed(1)
                         : 0}% Margin
@@ -1191,7 +1191,7 @@ const ProjectDetail = () => {
                             <td className="px-4 py-3 text-muted-foreground">
                               {format(new Date(expense.date), "MMM d, yyyy")}
                             </td>
-                            <td className="px-4 py-3 text-right font-bold text-red-500">
+                            <td className="px-4 py-3 text-right font-bold text-blue-500">
                               -₹{Number(expense.amount).toLocaleString()}
                             </td>
                           </tr>
@@ -1261,15 +1261,15 @@ const ProjectDetail = () => {
 
           {/* Summary Cards — Row 2 (Net Profit + Commission Rate hero) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <Card className={`bg-gradient-to-br ${netSalesProfit >= 0 ? "from-emerald-500/15 to-emerald-600/5 border-emerald-500/30" : "from-red-500/15 to-red-600/5 border-red-500/30"}`}>
+            <Card className={`bg-gradient-to-br ${netSalesProfit >= 0 ? "from-emerald-500/15 to-emerald-600/5 border-emerald-500/30" : "from-blue-500/15 to-blue-600/5 border-blue-500/30"}`}>
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${netSalesProfit >= 0 ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
-                    <PiggyBank className={`h-6 w-6 ${netSalesProfit >= 0 ? "text-emerald-500" : "text-red-500"}`} />
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${netSalesProfit >= 0 ? "bg-emerald-500/20" : "bg-blue-500/20"}`}>
+                    <PiggyBank className={`h-6 w-6 ${netSalesProfit >= 0 ? "text-emerald-500" : "text-blue-500"}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Net Profit (this product)</div>
-                    <div className={`text-3xl font-extrabold ${netSalesProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                    <div className={`text-3xl font-extrabold ${netSalesProfit >= 0 ? "text-emerald-600" : "text-blue-600"}`}>
                       ₹{netSalesProfit.toLocaleString()}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">Received + Extra − Commission − Expenses</div>
@@ -1344,9 +1344,9 @@ const ProjectDetail = () => {
                           <TableCell className="text-sm">{cust.plan_name || "—"}</TableCell>
                           <TableCell className="font-semibold">₹{Number(cust.monthly_value || 0).toLocaleString()}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={cust.subscription_status === "Active" ? "bg-green-50 text-green-700 border-green-200" : cust.subscription_status === "Trial" ? "bg-blue-50 text-blue-700 border-blue-200" : cust.subscription_status === "Churned" ? "bg-red-50 text-red-700 border-red-200" : "bg-gray-50 text-gray-600 border-gray-200"}>{cust.subscription_status}</Badge>
+                            <Badge variant="outline" className={cust.subscription_status === "Active" ? "bg-green-50 text-green-700 border-green-200" : cust.subscription_status === "Trial" ? "bg-blue-50 text-blue-700 border-blue-200" : cust.subscription_status === "Churned" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-50 text-gray-600 border-gray-200"}>{cust.subscription_status}</Badge>
                           </TableCell>
-                          <TableCell className="text-right"><Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => handleDeleteCustomer(cust.id)}><Trash2 className="h-3 w-3" /></Button></TableCell>
+                          <TableCell className="text-right"><Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:bg-blue-50" onClick={() => handleDeleteCustomer(cust.id)}><Trash2 className="h-3 w-3" /></Button></TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -1409,7 +1409,7 @@ const ProjectDetail = () => {
                               ) : <span className="text-muted-foreground text-xs">—</span>}
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={`text-[10px] ${b.status === "Paid" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : b.status === "Overdue" ? "bg-red-50 text-red-700 border-red-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>{b.status}</Badge>
+                              <Badge variant="outline" className={`text-[10px] ${b.status === "Paid" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : b.status === "Overdue" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>{b.status}</Badge>
                             </TableCell>
                           </TableRow>
                         );
@@ -1466,7 +1466,7 @@ const ProjectDetail = () => {
                         {(parseFloat(newSale.amount) || 0) + (parseFloat(newSale.extra_charges) || 0) - (parseFloat(newSale.amount) || 0) * effectiveCommPct / 100 - (parseFloat(newSale.sale_expenses) || 0) !== 0 && (
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
                             <span className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Net Profit</span>
-                            <span className={`text-lg font-extrabold ${((parseFloat(newSale.amount) || 0) + (parseFloat(newSale.extra_charges) || 0) - (parseFloat(newSale.amount) || 0) * effectiveCommPct / 100 - (parseFloat(newSale.sale_expenses) || 0)) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                            <span className={`text-lg font-extrabold ${((parseFloat(newSale.amount) || 0) + (parseFloat(newSale.extra_charges) || 0) - (parseFloat(newSale.amount) || 0) * effectiveCommPct / 100 - (parseFloat(newSale.sale_expenses) || 0)) >= 0 ? "text-emerald-600" : "text-blue-600"}`}>
                               ₹{((parseFloat(newSale.amount) || 0) + (parseFloat(newSale.extra_charges) || 0) - (parseFloat(newSale.amount) || 0) * effectiveCommPct / 100 - (parseFloat(newSale.sale_expenses) || 0)).toLocaleString()}
                             </span>
                           </div>
@@ -1524,13 +1524,13 @@ const ProjectDetail = () => {
                                 <div className="text-[10px] text-muted-foreground max-w-[140px] truncate" title={sale.expense_notes}>{sale.expense_notes}</div>
                               )}
                             </TableCell>
-                            <TableCell className={`text-right font-extrabold whitespace-nowrap ${net >= 0 ? "text-emerald-600" : "text-red-600"}`}>₹{net.toLocaleString()}</TableCell>
+                            <TableCell className={`text-right font-extrabold whitespace-nowrap ${net >= 0 ? "text-emerald-600" : "text-blue-600"}`}>₹{net.toLocaleString()}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditSaleGate({ ...sale })} title="Edit / add expenses">
                                   <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => setDeleteSaleTarget(sale)} title="Delete sale">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:bg-blue-50" onClick={() => setDeleteSaleTarget(sale)} title="Delete sale">
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
@@ -1887,7 +1887,7 @@ const ProjectDetail = () => {
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditDistGate({ ...d })} title="Edit">
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => setDeleteDistTarget(d)} title="Delete">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:bg-blue-50" onClick={() => setDeleteDistTarget(d)} title="Delete">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -2021,9 +2021,9 @@ const ProjectDetail = () => {
                           </TableCell>
                           <TableCell><Badge variant="outline" className="text-[10px]">{exp.category}</Badge></TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{exp.date ? format(new Date(exp.date), "MMM d, yyyy") : "—"}</TableCell>
-                          <TableCell className="text-right font-bold text-red-500 whitespace-nowrap">₹{Number(exp.amount || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-bold text-blue-500 whitespace-nowrap">₹{Number(exp.amount || 0).toLocaleString()}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => setExpenseToDelete(exp)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-500 hover:bg-blue-50" onClick={() => setExpenseToDelete(exp)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </TableCell>

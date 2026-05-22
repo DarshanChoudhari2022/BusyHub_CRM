@@ -246,7 +246,7 @@ export function FieldTeamWidget() {
             </button>
 
             {mockAttemptsTotal > 0 && (
-              <div className="flex items-center justify-between px-3 py-2 rounded-md border bg-red-50 text-red-700 border-red-200 text-xs font-medium">
+              <div className="flex items-center justify-between px-3 py-2 rounded-md border bg-blue-50 text-blue-700 border-blue-200 text-xs font-medium">
                 <span className="flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Mock-GPS attempts
@@ -263,12 +263,12 @@ export function FieldTeamWidget() {
               fraudRisk.map((f) => {
                 const severe = (f.fake_pct || 0) >= 40;
                 const cls = severe
-                  ? "border-red-200 bg-red-50/60"
+                  ? "border-blue-200 bg-blue-50/60"
                   : "border-amber-200 bg-amber-50/60";
                 return (
                   <div key={f.employee_id} className={`flex items-center gap-2 p-2 rounded-md border ${cls}`}>
                     <Avatar className="h-7 w-7 border border-border">
-                      <AvatarFallback className="bg-red-500/10 text-red-600 text-[10px] font-semibold">
+                      <AvatarFallback className="bg-blue-500/10 text-blue-600 text-[10px] font-semibold">
                         {getInitials(f.employee_name)}
                       </AvatarFallback>
                     </Avatar>
@@ -278,7 +278,7 @@ export function FieldTeamWidget() {
                         {f.fake_count} fake / {f.real_count + f.fake_count} verified
                       </div>
                     </div>
-                    <Badge variant="outline" className={`text-[10px] font-bold shrink-0 ${severe ? "bg-red-100 text-red-700 border-red-300" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
+                    <Badge variant="outline" className={`text-[10px] font-bold shrink-0 ${severe ? "bg-blue-100 text-blue-700 border-blue-300" : "bg-amber-100 text-amber-700 border-amber-300"}`}>
                       <ShieldX className="w-3 h-3 mr-0.5" />
                       {f.fake_pct}%
                     </Badge>

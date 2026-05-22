@@ -174,7 +174,7 @@ const Financials = () => {
       return acc;
     }, {})
   ).map(([name, value], index) => {
-    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#14B8A6"];
+    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#2563EB", "#8B5CF6", "#EC4899", "#14B8A6"];
     return { name, value: Number(value), color: colors[index % colors.length] };
   }).sort((a, b) => b.value - a.value) : [];
 
@@ -372,15 +372,15 @@ const Financials = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+        <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
           <CardContent className="pt-6">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
                 <h3 className="text-2xl font-bold mt-1"><Masked placeholder="₹•••••">{formatINR(totalExpenses)}</Masked></h3>
               </div>
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <TrendingDown className="h-5 w-5 text-red-500" />
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <TrendingDown className="h-5 w-5 text-blue-500" />
               </div>
             </div>
             {/* Dynamic change could be added here later */}
@@ -544,7 +544,7 @@ const Financials = () => {
                     <td className="px-6 py-4 text-right font-mono"><Masked placeholder="₹•••••">{formatINR(project.budget_revenue || 0)}</Masked></td>
                     <td className="px-6 py-4 text-right font-mono"><Masked placeholder="₹•••••">{formatINR(project.budget_cost || 0)}</Masked></td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`font-bold ${((project.budget_revenue || 0) - (project.budget_cost || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`font-bold ${((project.budget_revenue || 0) - (project.budget_cost || 0)) >= 0 ? 'text-green-600' : 'text-blue-600'}`}>
                         <Masked placeholder="₹•••••">{formatINR((project.budget_revenue || 0) - (project.budget_cost || 0))}</Masked>
                       </span>
                     </td>
@@ -586,7 +586,7 @@ const Financials = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="font-bold text-red-500"><Masked placeholder="-₹•••••">-{formatINR(expense.amount)}</Masked></p>
+                    <p className="font-bold text-blue-500"><Masked placeholder="-₹•••••">-{formatINR(expense.amount)}</Masked></p>
                     <p className="text-[10px] text-muted-foreground">Successful</p>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

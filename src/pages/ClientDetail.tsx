@@ -920,7 +920,7 @@ const ClientDetail = () => {
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Card className="p-3 text-center"><div className="text-xs text-muted-foreground">Total Billed</div><div className="text-lg font-bold">{formatINR(client.totalBilled)}</div></Card>
             <Card className="p-3 text-center bg-green-50"><div className="text-xs text-muted-foreground">Received</div><div className="text-lg font-bold text-green-600">{formatINR(totalReceived)}</div></Card>
-            <Card className="p-3 text-center"><div className="text-xs text-muted-foreground">Pending</div><div className={`text-lg font-bold ${client.outstanding > 0 ? "text-red-600" : "text-green-600"}`}>{formatINR(client.outstanding)}</div></Card>
+            <Card className="p-3 text-center"><div className="text-xs text-muted-foreground">Pending</div><div className={`text-lg font-bold ${client.outstanding > 0 ? "text-blue-600" : "text-green-600"}`}>{formatINR(client.outstanding)}</div></Card>
           </div>
 
           <Card>

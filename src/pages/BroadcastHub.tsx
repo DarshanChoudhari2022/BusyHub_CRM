@@ -425,9 +425,9 @@ export default function BroadcastHub() {
                   <div className="space-y-1">
                     {attachments.map((a, i) => (
                       <div key={i} className="flex items-center gap-2 text-[11px] bg-muted/40 rounded p-1.5">
-                        {a.type === "pdf" ? <File className="h-3.5 w-3.5 text-red-500 shrink-0" /> : <FileImage className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                        {a.type === "pdf" ? <File className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileImage className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
                         <span className="flex-1 truncate">{a.name}</span>
-                        <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-red-400"
+                        <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-blue-400"
                           onClick={() => {
                             setAttachments(prev => prev.filter((_, j) => j !== i));
                             setMessage(prev => prev.replace(`\n\n📎 ${a.name}:\n${a.url}`, ""));
@@ -928,7 +928,7 @@ function PhonePanel({ onImported, userId, userName }: { onImported: () => void; 
           variant="outline"
           onClick={clearAllPhoneContacts}
           disabled={busy || clearing}
-          className="flex-1 sm:flex-initial text-red-600 border-red-200 hover:bg-red-50"
+          className="flex-1 sm:flex-initial text-blue-600 border-blue-200 hover:bg-blue-50"
           title="Delete all previously imported phone contacts, then re-import for a clean list"
         >
           {clearing ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}

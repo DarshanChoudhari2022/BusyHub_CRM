@@ -61,13 +61,13 @@ export const TopBar = () => {
         <Button
           variant="ghost"
           size="icon"
-          className={`relative transition-colors ${isShielded ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "text-green-500 hover:text-green-600 hover:bg-green-50"}`}
+          className={`relative transition-colors ${isShielded ? "text-blue-500 hover:text-blue-600 hover:bg-blue-50" : "text-green-500 hover:text-green-600 hover:bg-green-50"}`}
           onClick={() => isShielded ? requestUnlock() : lock()}
           title={isShielded ? "Data hidden — click to unlock" : "Data visible — click to lock"}
         >
           {isShielded ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           {isShielded && (
-            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-background" />
           )}
         </Button>
         <Popover>
@@ -245,7 +245,7 @@ export const TopBar = () => {
               </div>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-48 p-2">
-              <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" onClick={handleLogout}>
+              <Button variant="ghost" className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>
@@ -274,10 +274,10 @@ export const TopBar = () => {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
               autoFocus
-              className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
+              className={passwordError ? "border-blue-500 focus-visible:ring-blue-500" : ""}
             />
             {passwordError && (
-              <p className="text-xs text-red-500 font-medium">{passwordError}</p>
+              <p className="text-xs text-blue-500 font-medium">{passwordError}</p>
             )}
           </div>
           <p className="text-xs text-muted-foreground">

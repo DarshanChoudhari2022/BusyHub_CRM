@@ -108,7 +108,7 @@ export function EmployeeFieldStats({ visits, homeLat, homeLng, homeRadiusM }: Pr
     stats.fakePct == null
       ? "bg-slate-50 text-slate-600 border-slate-200"
       : stats.fakePct >= 40
-      ? "bg-red-50 text-red-700 border-red-200"
+      ? "bg-blue-50 text-blue-700 border-blue-200"
       : stats.fakePct >= 20
       ? "bg-amber-50 text-amber-700 border-amber-200"
       : "bg-green-50 text-green-700 border-green-200";
@@ -123,7 +123,7 @@ export function EmployeeFieldStats({ visits, homeLat, homeLng, homeRadiusM }: Pr
         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1">
           <ShieldCheck className="w-3 h-3" /> {stats.real} real
         </Badge>
-        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1">
           <ShieldX className="w-3 h-3" /> {stats.fake} fake
         </Badge>
         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
@@ -133,7 +133,7 @@ export function EmployeeFieldStats({ visits, homeLat, homeLng, homeRadiusM }: Pr
           Fake: {stats.fakePct == null ? "—" : `${stats.fakePct}%`}
         </Badge>
         {stats.mock > 0 && (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 gap-1 font-semibold">
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 gap-1 font-semibold">
             <AlertTriangle className="w-3 h-3" /> {stats.mock} mock-GPS attempts
           </Badge>
         )}
@@ -143,7 +143,7 @@ export function EmployeeFieldStats({ visits, homeLat, homeLng, homeRadiusM }: Pr
             className={
               "gap-1 font-semibold " +
               (homeCluster.pct >= 40
-                ? "bg-red-50 text-red-700 border-red-300"
+                ? "bg-blue-50 text-blue-700 border-blue-300"
                 : homeCluster.pct >= 20
                 ? "bg-amber-50 text-amber-700 border-amber-200"
                 : "bg-slate-50 text-slate-600 border-slate-200")

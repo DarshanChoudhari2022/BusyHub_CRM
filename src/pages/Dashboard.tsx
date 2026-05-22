@@ -442,7 +442,7 @@ const Dashboard = () => {
           <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
           <div className="flex items-start justify-between mb-4 relative">
             <div className="flex items-center gap-3">
-              <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${netProfitThisMonth >= 0 ? "bg-emerald-500/15 text-emerald-600" : "bg-red-500/15 text-red-600"}`}>
+              <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${netProfitThisMonth >= 0 ? "bg-emerald-500/15 text-emerald-600" : "bg-blue-500/15 text-blue-600"}`}>
                 <PiggyBank className="h-5 w-5" />
               </div>
               <div>
@@ -452,11 +452,11 @@ const Dashboard = () => {
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">This month</div>
-              <div className={`text-2xl font-extrabold ${netProfitThisMonth >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+              <div className={`text-2xl font-extrabold ${netProfitThisMonth >= 0 ? "text-emerald-600" : "text-blue-600"}`}>
                 <Masked placeholder="₹•••••">{formatINRCompact(netProfitThisMonth)}</Masked>
               </div>
               {netProfitPrevMonth !== 0 && (
-                <div className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${profitTrendPct >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                <div className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${profitTrendPct >= 0 ? "text-emerald-600" : "text-blue-600"}`}>
                   <ArrowUpRight className={`h-3 w-3 ${profitTrendPct < 0 ? "rotate-90" : ""}`} />
                   {profitTrendPct >= 0 ? "+" : ""}{profitTrendPct.toFixed(1)}% vs prev
                 </div>
@@ -522,7 +522,7 @@ const Dashboard = () => {
             </div>
             <div className="rounded-lg bg-card/50 border border-border/40 p-2.5">
               <div className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Total Profit</div>
-              <div className={`text-base font-extrabold mt-0.5 ${totalProductProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}><Masked placeholder="₹•••••">{formatINRCompact(totalProductProfit)}</Masked></div>
+              <div className={`text-base font-extrabold mt-0.5 ${totalProductProfit >= 0 ? "text-emerald-600" : "text-blue-600"}`}><Masked placeholder="₹•••••">{formatINRCompact(totalProductProfit)}</Masked></div>
             </div>
           </div>
           <div className="space-y-2 relative max-h-72 overflow-y-auto">
@@ -553,7 +553,7 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center justify-between text-[10px]">
                       <span className="text-muted-foreground">Revenue: <span className="font-bold text-foreground"><Masked placeholder="₹•••">{formatINRCompact(p.revenue)}</Masked></span></span>
-                      <span className={`font-bold ${p.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>Profit: <Masked placeholder="₹•••">{formatINRCompact(p.netProfit)}</Masked></span>
+                      <span className={`font-bold ${p.netProfit >= 0 ? "text-emerald-600" : "text-blue-600"}`}>Profit: <Masked placeholder="₹•••">{formatINRCompact(p.netProfit)}</Masked></span>
                     </div>
                   </div>
                 );
@@ -666,7 +666,7 @@ const Dashboard = () => {
                   <div className="text-xs text-muted-foreground truncate"><Masked>{f.organization}</Masked></div>
                 </div>
                 <div className="text-right shrink-0 ml-2">
-                  <div className={`text-xs font-semibold px-1.5 py-0.5 rounded ${f.heat === "Hot" ? "bg-red-100 text-red-700" : f.heat === "Warm" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700"}`}>{f.heat}</div>
+                  <div className={`text-xs font-semibold px-1.5 py-0.5 rounded ${f.heat === "Hot" ? "bg-blue-100 text-blue-700" : f.heat === "Warm" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700"}`}>{f.heat}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{f.assignedTo}</div>
                 </div>
               </div>
@@ -690,15 +690,15 @@ const Dashboard = () => {
             {pendingTasks.map((t) => (
               <div
                 key={t.id}
-                className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${t.isOverdue ? "border-red-100 bg-red-50/50" : "border-border hover:bg-muted/40"}`}
+                className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${t.isOverdue ? "border-blue-100 bg-blue-50/50" : "border-border hover:bg-muted/40"}`}
                 onClick={() => navigate("/leads")}
               >
                 <div className="min-w-0 flex-1 cursor-pointer">
-                  <div className={`text-sm font-semibold truncate ${t.isOverdue ? "text-red-700" : ""}`}>{t.description}</div>
+                  <div className={`text-sm font-semibold truncate ${t.isOverdue ? "text-blue-700" : ""}`}>{t.description}</div>
                   <div className="text-xs text-muted-foreground truncate">{t.leadName}</div>
                 </div>
                 <div className="text-right shrink-0 ml-2">
-                  <div className={`text-[10px] font-bold ${t.isOverdue ? "text-red-600" : "text-muted-foreground"}`}>{formatDateDDMMYYYY(new Date(t.dueDate))}</div>
+                  <div className={`text-[10px] font-bold ${t.isOverdue ? "text-blue-600" : "text-muted-foreground"}`}>{formatDateDDMMYYYY(new Date(t.dueDate))}</div>
                   <div className="text-[10px] text-muted-foreground">{t.assignedTo}</div>
                 </div>
               </div>

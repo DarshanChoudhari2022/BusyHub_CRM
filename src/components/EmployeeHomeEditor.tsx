@@ -177,7 +177,7 @@ export function EmployeeHomeEditor({ employeeId, homeLat, homeLng, homeRadiusM, 
           </div>
           <div className="flex items-center justify-end gap-2 pt-1">
             {isSet && (
-              <Button size="sm" variant="ghost" className="h-7 text-xs text-red-600 hover:text-red-700" onClick={clear} disabled={saving}>
+              <Button size="sm" variant="ghost" className="h-7 text-xs text-blue-600 hover:text-blue-700" onClick={clear} disabled={saving}>
                 Clear
               </Button>
             )}

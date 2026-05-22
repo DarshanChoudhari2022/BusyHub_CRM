@@ -43,7 +43,7 @@ interface VisitRow {
 const STATUS_META: Record<VStatus, { label: string; cls: string; icon: any }> = {
   pending:        { label: "Pending",     cls: "bg-amber-50 text-amber-700 border-amber-200",   icon: Clock },
   verified_real:  { label: "Real",        cls: "bg-green-50 text-green-700 border-green-200",   icon: ShieldCheck },
-  verified_fake:  { label: "Fake",        cls: "bg-red-50 text-red-700 border-red-200",         icon: ShieldX },
+  verified_fake:  { label: "Fake",        cls: "bg-blue-50 text-blue-700 border-blue-200",         icon: ShieldX },
   unreachable:    { label: "Unreachable", cls: "bg-slate-50 text-slate-600 border-slate-200",   icon: PhoneCall },
 };
 
@@ -290,7 +290,7 @@ const Verification = () => {
 
               {/* Mock-GPS warning */}
               {row.is_mock && (
-                <div className="flex items-center gap-2 p-2 mb-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs font-medium">
+                <div className="flex items-center gap-2 p-2 mb-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-xs font-medium">
                   <AlertTriangle className="w-4 h-4" />
                   Mock GPS detected on this submission!
                 </div>
@@ -316,7 +316,7 @@ const Verification = () => {
                 <Button
                   size="sm"
                   variant={status === "verified_fake" ? "default" : "outline"}
-                  className={status === "verified_fake" ? "bg-red-600 hover:bg-red-700" : "border-red-300 text-red-700 hover:bg-red-50"}
+                  className={status === "verified_fake" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-300 text-blue-700 hover:bg-blue-50"}
                   onClick={() => beginMark(row, "verified_fake")}
                 >
                   <ShieldX className="w-3.5 h-3.5 mr-1" /> Fake
@@ -358,7 +358,7 @@ const Verification = () => {
                 <span className="font-medium text-foreground">{notesOpen.row.employees?.name}</span>
               </div>
               {notesOpen.status === "verified_fake" && (
-                <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs">
+                <div className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-xs">
                   <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                   <div>This will count as a fake-lead strike against the employee. Add a clear reason below.</div>
                 </div>

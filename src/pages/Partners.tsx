@@ -535,7 +535,7 @@ const Partners = () => {
                         }}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500 hover:text-red-700" onClick={() => deleteCommission(entry.id)}>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700" onClick={() => deleteCommission(entry.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </TableCell>

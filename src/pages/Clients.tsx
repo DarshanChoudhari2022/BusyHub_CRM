@@ -22,14 +22,14 @@ import { toast } from "sonner";
 import type { ClientCategory, PaymentStatus, Client } from "@/types";
 
 const CATEGORY_COLORS: Record<ClientCategory, string> = {
-  Politician: "bg-red-100 text-red-700 border-red-200",
+  Politician: "bg-blue-100 text-blue-700 border-blue-200",
   Clothing: "bg-blue-100 text-blue-700 border-blue-200",
   Motors: "bg-amber-100 text-amber-700 border-amber-200",
   Other: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
 const SERVICE_COLORS: Record<string, string> = {
-  "Campaign": "bg-red-50 text-red-600",
+  "Campaign": "bg-blue-50 text-blue-600",
   "Social Media": "bg-blue-50 text-blue-600",
   "Reels": "bg-purple-50 text-purple-600",
   "Branding": "bg-emerald-50 text-emerald-600",
@@ -292,9 +292,9 @@ const Clients = () => {
                       value={form.phone} 
                       onChange={(e) => { setForm({ ...form, phone: e.target.value }); validatePhone(e.target.value, "phone"); }} 
                       placeholder="+91 98765 43210"
-                      className={phoneError ? "border-red-500" : ""}
+                      className={phoneError ? "border-blue-500" : ""}
                     />
-                    {phoneError && <p className="text-[11px] text-red-500 mt-0.5">{phoneError}</p>}
+                    {phoneError && <p className="text-[11px] text-blue-500 mt-0.5">{phoneError}</p>}
                   </div>
                   <div>
                     <Label>WhatsApp</Label>
@@ -302,9 +302,9 @@ const Clients = () => {
                       value={form.whatsapp} 
                       onChange={(e) => { setForm({ ...form, whatsapp: e.target.value }); validatePhone(e.target.value, "whatsapp"); }} 
                       placeholder="+91 98765 43210"
-                      className={whatsappError ? "border-red-500" : ""}
+                      className={whatsappError ? "border-blue-500" : ""}
                     />
-                    {whatsappError && <p className="text-[11px] text-red-500 mt-0.5">{whatsappError}</p>}
+                    {whatsappError && <p className="text-[11px] text-blue-500 mt-0.5">{whatsappError}</p>}
                   </div>
                   <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" /></div>
                   <div><Label>Type of Services</Label><Input value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })} placeholder="e.g. Social Media, Branding" /></div>
@@ -350,9 +350,9 @@ const Clients = () => {
           <p className="text-muted-foreground">Loading clients...</p>
         </Card>
       ) : clientsError ? (
-        <Card className="p-8 text-center border-red-200 bg-red-50/30">
-          <h3 className="text-base font-semibold text-red-700 mb-1">Couldn't load clients</h3>
-          <p className="text-sm text-red-600 mb-3">{clientsError.message}</p>
+        <Card className="p-8 text-center border-blue-200 bg-blue-50/30">
+          <h3 className="text-base font-semibold text-blue-700 mb-1">Couldn't load clients</h3>
+          <p className="text-sm text-blue-600 mb-3">{clientsError.message}</p>
           <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Retry</Button>
         </Card>
       ) : filtered.length === 0 ? (
@@ -374,7 +374,7 @@ const Clients = () => {
                         <button onClick={() => handleEdit(c)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-primary">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => handleDeleteClick(c)} className="p-1 hover:bg-red-50 rounded text-muted-foreground hover:text-red-600">
+                        <button onClick={() => handleDeleteClick(c)} className="p-1 hover:bg-blue-50 rounded text-muted-foreground hover:text-blue-600">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -485,7 +485,7 @@ const Clients = () => {
                       <button onClick={() => handleEdit(c)} className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-primary" title="Edit">
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleDeleteClick(c)} className="p-1.5 hover:bg-red-50 rounded text-muted-foreground hover:text-red-600" title="Delete">
+                      <button onClick={() => handleDeleteClick(c)} className="p-1.5 hover:bg-blue-50 rounded text-muted-foreground hover:text-blue-600" title="Delete">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

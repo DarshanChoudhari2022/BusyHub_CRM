@@ -355,7 +355,7 @@ export default function FieldApp() {
         </div>
         <button
           onClick={handleLogout}
-          className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800"
+          className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800"
         >
           <LogOut className="h-5 w-5" />
         </button>
@@ -540,7 +540,7 @@ function HomeTab({
         {isTracking ? (
           <Button
             onClick={onStop}
-            className="w-full bg-red-600 hover:bg-red-500 text-white font-bold"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold"
           >
             <Square className="h-4 w-4 mr-2" /> Stop Shift
           </Button>
@@ -974,7 +974,7 @@ function FieldLogin() {
         </p>
 
         {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-950/60 border border-red-700/40 px-3 py-2.5 text-xs font-semibold text-red-400">
+          <div className="mb-4 flex items-center gap-2 rounded-lg bg-blue-950/60 border border-blue-700/40 px-3 py-2.5 text-xs font-semibold text-blue-400">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </div>
