@@ -1,0 +1,511 @@
+import { useState, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { Plus, LayoutGrid, List, Phone, Users, Search, Filter, MessageCircle, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PageHeader, PaymentBadge } from "@/components/shared";
+import { Masked } from "@/components/Masked";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { useSupabaseTable } from "@/hooks/useSupabase";
+import { formatINR, isValidIndianPhone, waLink, smsLink } from "@/lib/format";
+import { WHATSAPP_TEMPLATES } from "@/data/whatsappTemplates";
+import { usePrivacyShield } from "@/contexts/PrivacyShieldContext";
+import { toast } from "sonner";
+import type { ClientCategory, PaymentStatus, Client } from "@/types";
+
+const CATEGORY_COLORS: Record<ClientCategory, string> = {
+  Politician: "bg-red-100 text-red-700 border-red-200",
+  Clothing: "bg-blue-100 text-blue-700 border-blue-200",
+  Motors: "bg-amber-100 text-amber-700 border-amber-200",
+  Other: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+const SERVICE_COLORS: Record<string, string> = {
+  "Campaign": "bg-red-50 text-red-600",
+  "Social Media": "bg-blue-50 text-blue-600",
+  "Reels": "bg-purple-50 text-purple-600",
+  "Branding": "bg-emerald-50 text-emerald-600",
+  "Photography": "bg-amber-50 text-amber-600",
+  "Graphics": "bg-cyan-50 text-cyan-600",
+  "Banners": "bg-orange-50 text-orange-600",
+  "Videography": "bg-rose-50 text-rose-600",
+};
+
+import { useAuth } from "@/contexts/AuthContext";
+
+const Clients = () => {
+  const { user } = useAuth();
+  const { isShielded, withShield } = usePrivacyShield();
+  // Keep the primary clients call small + fast so the spinner clears quickly.
+  // Related data (services, assignments, bills, payments) is fetched in
+  // parallel and merged in afterwards — the list renders as soon as clients
+  // arrive, even if the side queries are still in flight.
+  const { data: clientsData, loading, error: clientsError, insert, update, remove } = useSupabaseTable<any>('clients', '*');
+  const { data: allServices } = useSupabaseTable<any>('client_services', 'client_id, service_name, active');
+  const { data: allAssignments } = useSupabaseTable<any>('client_assignments', 'client_id, employee_id, employees(name)');
+  const { data: allBills } = useSupabaseTable<any>('quotations', 'client_id, grand_total, total_amount, amount_paid, type, status, is_bill, quotation_number, quote_number');
+  const { data: allPayments } = useSupabaseTable<any>('payment_history', 'client_id, amount');
+  const [view, setView] = useState<"cards" | "table">("cards");
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState<string>("all");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [payFilter, setPayFilter] = useState<string>("all");
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [form, setForm] = useState({
+    name: "", category: "Other" as ClientCategory, phone: "", email: "",
+    area: "", whatsapp: "", serviceType: "", notes: "",
+    customCategory: "",
+  });
+  const [phoneError, setPhoneError] = useState("");
+  const [whatsappError, setWhatsappError] = useState("");
+
+  const resetForm = () => {
+    setForm({ name: "", category: "Other", phone: "", email: "", area: "", whatsapp: "", serviceType: "", notes: "", customCategory: "" });
+    setEditingClient(null);
+    setPhoneError("");
+    setWhatsappError("");
+  };
+
+  const clients = useMemo(() => {
+    // Group side-data by client_id once so the per-client map stays O(n).
+    const servicesByClient = new Map<string, any[]>();
+    for (const s of allServices) {
+      if (!s?.active) continue;
+      const list = servicesByClient.get(s.client_id) || [];
+      list.push(s);
+      servicesByClient.set(s.client_id, list);
+    }
+    const assignmentsByClient = new Map<string, any[]>();
+    for (const a of allAssignments) {
+      const list = assignmentsByClient.get(a.client_id) || [];
+      list.push(a);
+      assignmentsByClient.set(a.client_id, list);
+    }
+    const billsByClient = new Map<string, any[]>();
+    for (const b of allBills) {
+      const list = billsByClient.get(b.client_id) || [];
+      list.push(b);
+      billsByClient.set(b.client_id, list);
+    }
+    const paymentsByClient = new Map<string, any[]>();
+    for (const p of allPayments) {
+      const list = paymentsByClient.get(p.client_id) || [];
+      list.push(p);
+      paymentsByClient.set(p.client_id, list);
+    }
+
+    return clientsData.map(c => {
+      const clientBills = billsByClient.get(c.id) || [];
+      const invoices = clientBills.filter((b: any) => b.is_bill || b.type === "Bill" || (b.quotation_number || b.quote_number || "").startsWith("BL-"));
+      const totalBilled = invoices.reduce((s: number, b: any) => s + (b.grand_total || b.total_amount || 0), 0);
+
+      const clientPayments = paymentsByClient.get(c.id) || [];
+      const totalPaid = clientPayments.reduce((s: number, p: any) => s + (p.amount || 0), 0);
+
+      const outstanding = totalBilled > 0 ? Math.max(0, totalBilled - totalPaid) : (c.outstanding || 0);
+      const assignments = assignmentsByClient.get(c.id) || [];
+
+      return {
+        ...c,
+        serviceLabels: (servicesByClient.get(c.id) || []).map((s: any) => s.service_name),
+        assignedEmployees: assignments.map((a: any) => a.employee_id),
+        assignedEmployeeNames: assignments.map((a: any) => a.employees?.name).filter(Boolean),
+        paymentStatus: outstanding > 0 ? "Overdue" : (totalBilled > 0 ? "Paid" : (c.payment_status || "Paid")),
+        outstanding,
+        totalBilled,
+      };
+    });
+  }, [clientsData, allServices, allAssignments, allBills, allPayments]);
+
+  const filtered = useMemo(() => {
+    return clients.filter(c => {
+      // Role-Based Access Control logic
+      if (user?.role === "Employee" && !c.assignedEmployees.includes(user.id)) return false;
+
+      // Other Filters
+      if (catFilter !== "all" && c.category !== catFilter) return false;
+      if (payFilter !== "all" && c.paymentStatus !== payFilter) return false;
+      if (search !== "") {
+        const query = search.toLowerCase();
+        if (!c.name.toLowerCase().includes(query) && !c.serviceLabels.some(s => s.toLowerCase().includes(query))) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [clients, catFilter, payFilter, search, user]);
+
+  const validatePhone = (phone: string, field: "phone" | "whatsapp") => {
+    if (phone && !isValidIndianPhone(phone)) {
+      if (field === "phone") setPhoneError("Enter valid Indian number (10 digits, starting 6-9)");
+      else setWhatsappError("Enter valid Indian number (10 digits, starting 6-9)");
+      return false;
+    }
+    if (field === "phone") setPhoneError("");
+    else setWhatsappError("");
+    return true;
+  };
+
+  const saveClient = async () => {
+    if (!form.name) { toast.error("Client name is required"); return; }
+    
+    // Validate phone numbers
+    const phoneValid = !form.phone || validatePhone(form.phone, "phone");
+    const waValid = !form.whatsapp || validatePhone(form.whatsapp, "whatsapp");
+    if (!phoneValid || !waValid) return;
+    
+    const clientData = {
+      name: form.name,
+      category: ["Politician", "Clothing", "Motors"].includes(form.category) ? form.category : form.customCategory || "Other",
+      contact_person: form.name,
+      phone: form.phone,
+      whatsapp: form.whatsapp || (form.phone ? form.phone.replace(/[^0-9+]/g, "") : ""),
+      email: form.email,
+      service_type: form.serviceType,
+      notes: form.notes,
+      area: form.area,
+      status: "Active",
+    };
+
+    if (editingClient) {
+      const { error } = await update(editingClient.id, clientData);
+      if (error) {
+        toast.error("Failed to update client: " + error.message);
+      } else {
+        toast.success("Client updated successfully");
+        setOpen(false);
+        resetForm();
+      }
+    } else {
+      const { error } = await insert(clientData);
+      if (error) {
+        toast.error("Failed to add client: " + error.message);
+      } else {
+        toast.success("Client added successfully");
+        setOpen(false);
+        resetForm();
+      }
+    }
+  };
+
+  const handleEdit = (client: any) => {
+    withShield(() => {
+      setEditingClient(client);
+      const isStandardCategory = ["Politician", "Clothing", "Motors"].includes(client.category);
+      setForm({
+        name: client.name || "",
+        category: isStandardCategory ? client.category : "Other",
+        customCategory: isStandardCategory ? "" : client.category,
+        phone: client.phone || "",
+        whatsapp: client.whatsapp || "",
+        email: client.email || "",
+        area: client.area || "",
+        serviceType: client.service_type || "",
+        notes: client.notes || "",
+      });
+      setOpen(true);
+    });
+  };
+
+  const handleDeleteClick = (client: any) => {
+    withShield(() => {
+      setDeleteTarget({ id: client.id, name: client.name });
+    });
+  };
+
+  const executeDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    const { error } = await remove(deleteTarget.id);
+    if (error) {
+      toast.error("Failed to delete client: " + error.message);
+    } else {
+      toast.success("Client deleted successfully");
+    }
+    setDeleteTarget(null);
+  }, [deleteTarget, remove]);
+
+  const openWhatsApp = (phone: string, name: string) => {
+    window.open(waLink(phone, WHATSAPP_TEMPLATES.LEAD_GENERAL(name)), "_blank");
+  };
+
+  const openSMS = (phone: string, name: string) => {
+    const msg = `Hi ${name}, this is from BusyHub. `;
+    window.open(smsLink(phone, msg), "_blank");
+  };
+
+  const getInitials = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2);
+
+  return (
+    <div>
+      <PageHeader
+        title="Clients"
+        subtitle={`${filtered.length} of ${clients.length} clients`}
+        actions={
+          <>
+            <div className="flex border border-border rounded-md overflow-hidden">
+              <Button size="sm" variant={view === "cards" ? "default" : "ghost"} className="rounded-none" onClick={() => setView("cards")}>
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant={view === "table" ? "default" : "ghost"} className="rounded-none" onClick={() => setView("table")}>
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            <Dialog open={open} onOpenChange={(v) => { if(!v) resetForm(); setOpen(v); }}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary-hover"><Plus className="h-4 w-4" />Add Client</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>{editingClient ? "Edit Client" : "Add New Client"}</DialogTitle></DialogHeader>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2"><Label>Client Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Adv. Rajesh Kumar" /></div>
+                  <div><Label>Category</Label>
+                    <Select value={form.category} onValueChange={(v: ClientCategory) => setForm({ ...form, category: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(["Politician", "Clothing", "Motors", "Other"] as ClientCategory[]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(form.category === "Other" || !["Politician", "Clothing", "Motors"].includes(form.category)) && (
+                    <div className="col-span-2">
+                      <Label>Specify Role *</Label>
+                      <Input 
+                        value={form.customCategory} 
+                        onChange={(e) => setForm({ ...form, customCategory: e.target.value })} 
+                        placeholder="e.g. Real Estate Agent, Boutique Owner"
+                      />
+                    </div>
+                  )}
+                  <div><Label>Constituency / Area</Label><Input value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} placeholder="e.g. Pune East" /></div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input 
+                      value={form.phone} 
+                      onChange={(e) => { setForm({ ...form, phone: e.target.value }); validatePhone(e.target.value, "phone"); }} 
+                      placeholder="+91 98765 43210"
+                      className={phoneError ? "border-red-500" : ""}
+                    />
+                    {phoneError && <p className="text-[11px] text-red-500 mt-0.5">{phoneError}</p>}
+                  </div>
+                  <div>
+                    <Label>WhatsApp</Label>
+                    <Input 
+                      value={form.whatsapp} 
+                      onChange={(e) => { setForm({ ...form, whatsapp: e.target.value }); validatePhone(e.target.value, "whatsapp"); }} 
+                      placeholder="+91 98765 43210"
+                      className={whatsappError ? "border-red-500" : ""}
+                    />
+                    {whatsappError && <p className="text-[11px] text-red-500 mt-0.5">{whatsappError}</p>}
+                  </div>
+                  <div><Label>Email</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" /></div>
+                  <div><Label>Type of Services</Label><Input value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })} placeholder="e.g. Social Media, Branding" /></div>
+                  <div className="col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button className="bg-primary hover:bg-primary-hover" onClick={saveClient}>{editingClient ? "Update Client" : "Save Client"}</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
+
+      {/* Search & Filters */}
+      <Card className="p-4 mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search by name, service…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <Select value={catFilter} onValueChange={setCatFilter}>
+            <SelectTrigger className="w-40"><Filter className="h-3.5 w-3.5 mr-1" /><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {(["Politician", "Clothing", "Motors", "Other"] as ClientCategory[]).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={payFilter} onValueChange={setPayFilter}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Payment Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {(["Paid", "Partial", "Overdue"] as PaymentStatus[]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </Card>
+
+      {loading ? (
+        <Card className="p-12 text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading clients...</p>
+        </Card>
+      ) : clientsError ? (
+        <Card className="p-8 text-center border-red-200 bg-red-50/30">
+          <h3 className="text-base font-semibold text-red-700 mb-1">Couldn't load clients</h3>
+          <p className="text-sm text-red-600 mb-3">{clientsError.message}</p>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Retry</Button>
+        </Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center">
+          <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+          <h3 className="text-lg font-semibold text-muted-foreground">No clients found</h3>
+          <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or filter criteria</p>
+        </Card>
+      ) : view === "cards" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map((c) => {
+            return (
+              <Card key={c.id} className="p-5 hover:shadow-md transition-shadow group">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Link to={`/clients/${c.id}`} className="font-bold text-lg hover:text-primary transition-colors"><Masked>{c.name}</Masked></Link>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleEdit(c)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-primary">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => handleDeleteClick(c)} className="p-1 hover:bg-red-50 rounded text-muted-foreground hover:text-red-600">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    {c.area && <div className="text-xs text-muted-foreground mt-0.5">{c.area}</div>}
+                  </div>
+                  <Badge variant="outline" className={`font-semibold text-xs ${CATEGORY_COLORS[c.category as ClientCategory] || CATEGORY_COLORS.Other}`}>{c.category}</Badge>
+                </div>
+                {c.service_type && (
+                  <div className="text-xs text-muted-foreground mb-2">Services: <span className="font-semibold text-foreground">{c.service_type}</span></div>
+                )}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {c.serviceLabels.map((s: string) => (
+                    <span key={s} className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${SERVICE_COLORS[s] || "bg-muted text-muted-foreground"}`}>{s}</span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                  <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{c.phone}</span>
+                  {c.whatsapp && (
+                    <button 
+                      onClick={(e) => { e.preventDefault(); openWhatsApp(c.whatsapp, c.name); }}
+                      className="flex items-center gap-1 text-green-600 hover:text-green-700 transition-colors"
+                      title="Open WhatsApp"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {c.phone && (
+                    <button 
+                      onClick={(e) => { e.preventDefault(); openSMS(c.phone, c.name); }}
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                      title="Send SMS"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                {c.assignedEmployeeNames?.length > 0 && (
+                  <div className="flex items-center gap-1 mb-3">
+                    {c.assignedEmployeeNames.slice(0, 3).map((name: string) => (
+                      <Avatar key={name} className="h-6 w-6 border-2 border-background">
+                        <AvatarFallback className="text-[9px] bg-muted font-bold">{getInitials(name)}</AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {c.assignedEmployeeNames.length > 3 && <span className="text-[10px] text-muted-foreground ml-1">+{c.assignedEmployeeNames.length - 3}</span>}
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div className="text-xs text-muted-foreground">Outstanding<div className={`font-bold text-base ${c.outstanding > 0 ? "text-primary" : "text-foreground"}`}><Masked placeholder="₹•••••">{formatINR(c.outstanding)}</Masked></div></div>
+                  <div className="flex items-center gap-2">
+                    <PaymentBadge status={c.paymentStatus} />
+                    <Link to={`/clients/${c.id}`}>
+                      <Button size="sm" variant="outline" className="text-xs h-7 opacity-0 group-hover:opacity-100 transition-opacity">View Details</Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client</TableHead><TableHead>Category</TableHead>
+                <TableHead>Services</TableHead><TableHead>Contact</TableHead>
+                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Outstanding</TableHead><TableHead>Status</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell>
+                    <Link to={`/clients/${c.id}`} className="font-semibold hover:text-primary"><Masked>{c.name}</Masked></Link>
+                    {c.area && <div className="text-xs text-muted-foreground">{c.area}</div>}
+                  </TableCell>
+                  <TableCell><Badge variant="outline" className={`text-xs ${CATEGORY_COLORS[c.category]}`}>{c.category}</Badge></TableCell>
+                  <TableCell className="max-w-xs">
+                    {c.service_type && <div className="text-xs text-muted-foreground mb-1">{c.service_type}</div>}
+                    <div className="flex flex-wrap gap-1">
+                      {c.serviceLabels.slice(0, 3).map(s => <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded-full ${SERVICE_COLORS[s] || "bg-muted text-muted-foreground"}`}>{s}</span>)}
+                      {c.serviceLabels.length > 3 && <span className="text-[10px] text-muted-foreground">+{c.serviceLabels.length - 3}</span>}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{c.phone}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      {c.whatsapp && (
+                        <button onClick={() => openWhatsApp(c.whatsapp, c.name)} className="p-1 rounded hover:bg-green-50 text-green-600" title="WhatsApp">
+                          <MessageCircle className="h-4 w-4" />
+                        </button>
+                      )}
+                      {c.phone && (
+                        <button onClick={() => openSMS(c.phone, c.name)} className="p-1 rounded hover:bg-blue-50 text-blue-600" title="SMS">
+                          <MessageSquare className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className={`text-right font-semibold ${c.outstanding > 0 ? "text-primary" : ""}`}><Masked placeholder="₹•••••">{formatINR(c.outstanding)}</Masked></TableCell>
+                  <TableCell><PaymentBadge status={c.paymentStatus} /></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Link to={`/clients/${c.id}`}><Button size="sm" variant="ghost" className="text-xs">View</Button></Link>
+                      <button onClick={() => handleEdit(c)} className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-primary" title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleDeleteClick(c)} className="p-1.5 hover:bg-red-50 rounded text-muted-foreground hover:text-red-600" title="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        onConfirm={executeDelete}
+        title="Delete Client"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? All associated data will be permanently removed.`}
+      />
+    </div>
+  );
+};
+
+export default Clients;

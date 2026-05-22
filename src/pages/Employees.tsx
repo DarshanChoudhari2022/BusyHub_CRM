@@ -1,0 +1,754 @@
+import { useState, useMemo } from "react";
+import { Plus, Search, Phone, Mail, Calendar, Clock, Wallet, ChevronDown, Briefcase, Users as UsersIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PageHeader } from "@/components/shared";
+import { useSupabaseTable } from "@/hooks/useSupabase";
+import { supabase } from "@/lib/supabase";
+import { formatINR, formatDateDDMMYYYY, waLink, isValidIndianPhone } from "@/lib/format";
+import { toast } from "sonner";
+import { Masked } from "@/components/Masked";
+import { usePrivacyShield } from "@/contexts/PrivacyShieldContext";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { createClient } from "@supabase/supabase-js";
+import type { Employee, EmployeeRole, WorkLog } from "@/types";
+import { EmployeeFieldStats } from "@/components/EmployeeFieldStats";
+import { EmployeeHomeEditor } from "@/components/EmployeeHomeEditor";
+
+// Create a separate Supabase client for signing up users without logging out the Admin
+const tempSupabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
+const STATUS_COLORS: Record<string, string> = {
+  Active: "bg-green-100 text-green-700 border-green-200",
+  "On Leave": "bg-amber-100 text-amber-700 border-amber-200",
+  Inactive: "bg-gray-100 text-gray-500 border-gray-200",
+};
+
+const Employees = () => {
+  const { isShielded, withShield } = usePrivacyShield();
+  const { data: employeesData, loading, insert: insertEmployee, update: updateEmployee, remove: removeEmployee, refresh: refreshEmployees } = useSupabaseTable<any>('employees', '*, work_logs(*), client_assignments(client_id, clients(name)), leads:leads!assigned_to(id, stage), society_data(*)');
+  const { data: clients } = useSupabaseTable<any>('clients', 'id, name, whatsapp, phone');
+  const [search, setSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [editingEmp, setEditingEmp] = useState<any | null>(null);
+  const [logOpen, setLogOpen] = useState(false);
+  const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
+  const [editingLog, setEditingLog] = useState<any | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [form, setForm] = useState({ 
+    name: "", 
+    role: "Graphic Designer" as EmployeeRole, 
+    customRole: "",
+    phone: "", 
+    email: "", 
+    password: "Creative@123",
+    salary: 0, amount: 0,
+    target: 50, // Default target
+    project: "society_one" as string,
+  });
+  const [phoneError, setPhoneError] = useState("");
+  const [logForm, setLogForm] = useState({ date: new Date().toISOString().slice(0, 10), clientId: "", workType: "", location: "", hours: 0, amount: 0, notes: "" });
+
+  const employees = useMemo(() => {
+    return employeesData.map(e => {
+      const allLeads = e.leads || [];
+      const activeLeads = allLeads.filter((l: any) => !["Converted", "Lost"].includes(l.stage));
+      const convertedLeads = allLeads.filter((l: any) => l.stage === "Converted");
+      const conversionRate = allLeads.length > 0 ? Math.round((convertedLeads.length / allLeads.length) * 100) : 0;
+      
+      return {
+        ...e,
+        assignedClients: e.client_assignments?.map((ca: any) => ca.client_id) || [],
+        assignedClientNames: e.client_assignments?.map((ca: any) => ca.clients?.name).filter(Boolean) || [],
+        displayRole: e.role === "Others" && e.custom_role ? e.custom_role : e.role,
+        activeLeadsCount: activeLeads.length,
+        conversionRate,
+        target: e.lead_target || 50,
+      };
+    });
+  }, [employeesData]);
+
+  const filtered = useMemo(() =>
+    employees.filter(e =>
+      search === "" ||
+      e.name.toLowerCase().includes(search.toLowerCase()) ||
+      (e.displayRole || e.role).toLowerCase().includes(search.toLowerCase())
+    ), [employees, search]);
+
+  const addEmployee = async () => {
+    if (!form.name) { toast.error("Employee name is required"); return; }
+    if (form.role === "Others" && !form.customRole.trim()) { toast.error("Please specify the custom role"); return; }
+    if (form.phone && !isValidIndianPhone(form.phone)) { setPhoneError("Enter valid Indian number"); return; }
+    if (!form.email) { toast.error("Email is required for creating a login account"); return; }
+    
+    // 1. Create the Auth User
+    const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+      email: form.email,
+      password: form.password || "Creative@123",
+      options: { data: { full_name: form.name } }
+    });
+
+    if (authError) {
+      toast.error("Failed to create login: " + authError.message);
+      return;
+    }
+
+    const userId = authData?.user?.id;
+
+    // 2. Insert into the Database
+    const { error } = await insertEmployee({
+      id: userId, // Ensure DB ID matches Auth ID
+      name: form.name,
+      role: form.role === "Others" ? "Employee" : form.role,
+      custom_role: form.role === "Others" ? form.customRole : null,
+      phone: form.phone,
+      whatsapp: form.phone,
+      email: form.email,
+      base_rate: form.salary,
+      salary: form.salary,
+      lead_target: form.target,
+      project: form.project,
+      status: "Active",
+    });
+
+    if (error) {
+      toast.error("Failed to add employee: " + error.message);
+    } else {
+      setAddOpen(false);
+      resetForm();
+      toast.success("Employee added successfully");
+    }
+  };
+
+  const editEmployee = (emp: any) => {
+    withShield(() => {
+      setEditingEmp(emp);
+      setForm({
+        name: emp.name,
+        role: emp.role === "Employee" && emp.custom_role ? "Others" : emp.role,
+        customRole: emp.custom_role || "",
+        phone: emp.phone || "",
+        email: emp.email || "",
+        password: "Creative@123",
+        salary: emp.salary || 0,
+        amount: 0,
+        target: emp.lead_target || 50,
+        project: emp.project || "society_one",
+      });
+      setAddOpen(true);
+    });
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!editingEmp) return;
+    if (!form.name) { toast.error("Employee name is required"); return; }
+    
+    const { error } = await updateEmployee(editingEmp.id, {
+      name: form.name,
+      role: form.role === "Others" ? "Employee" : form.role,
+      custom_role: form.role === "Others" ? form.customRole : null,
+      phone: form.phone,
+      whatsapp: form.phone,
+      email: form.email,
+      salary: form.salary,
+      lead_target: form.target,
+      project: form.project,
+    });
+
+    if (error) {
+      toast.error("Failed to update employee: " + error.message);
+    } else {
+      setAddOpen(false);
+      resetForm();
+      toast.success("Employee updated successfully");
+    }
+  };
+
+  const handleDeleteEmployee = async (emp: any) => {
+    withShield(async () => {
+      if (!confirm(`Are you sure you want to delete ${emp.name}? This will not delete their auth account but will remove them from the database.`)) return;
+      const { error } = await removeEmployee(emp.id);
+      if (error) {
+        toast.error("Failed to delete employee: " + error.message);
+      } else {
+        toast.success("Employee deleted");
+      }
+    });
+  };
+
+  const resetForm = () => {
+    setEditingEmp(null);
+    setForm({ name: "", role: "Graphic Designer", customRole: "", phone: "", email: "", password: "Creative@123", salary: 0, amount: 0, target: 50, project: "society_one" });
+    setPhoneError("");
+  };
+
+  const addWorkLog = async () => {
+    if (!selectedEmp || !logForm.clientId || !logForm.workType) { toast.error("Fill all required fields"); return; }
+    
+    const { error } = await supabase.from('work_logs').insert({
+      employee_id: selectedEmp.id,
+      date: logForm.date,
+      client_id: logForm.clientId,
+      work_type: logForm.workType,
+      location: logForm.location,
+      hours: logForm.hours,
+      amount: logForm.amount || 0,
+      notes: logForm.notes,
+      status: "Completed",
+    });
+
+    if (error) {
+      toast.error("Failed to add work log: " + error.message);
+    } else {
+      setLogOpen(false);
+      setEditingLog(null);
+      setLogForm({ date: new Date().toISOString().slice(0, 10), clientId: "", workType: "", location: "", hours: 0, amount: 0, notes: "" });
+      toast.success(editingLog ? "Work log updated" : "Work log added");
+      refreshEmployees();
+    }
+  };
+
+  const updateWorkLog = async () => {
+    if (!editingLog) return;
+    
+    const { error } = await supabase
+      .from('work_logs')
+      .update({
+        date: logForm.date,
+        client_id: logForm.clientId,
+        work_type: logForm.workType,
+        location: logForm.location,
+        hours: logForm.hours,
+        amount: logForm.amount || 0,
+        notes: logForm.notes,
+      })
+      .eq('id', editingLog.id);
+
+    if (error) {
+      toast.error("Failed to update work log: " + error.message);
+    } else {
+      setLogOpen(false);
+      setEditingLog(null);
+      setLogForm({ date: new Date().toISOString().slice(0, 10), clientId: "", workType: "", location: "", hours: 0, amount: 0, notes: "" });
+      toast.success("Work log updated");
+      refreshEmployees();
+    }
+  };
+
+  const deleteWorkLog = async (logId: string) => {
+    withShield(async () => {
+      if (!confirm("Are you sure you want to delete this work log?")) return;
+      
+      const { error } = await supabase
+        .from('work_logs')
+        .delete()
+        .eq('id', logId);
+
+      if (error) {
+        toast.error("Failed to delete work log: " + error.message);
+      } else {
+        toast.success("Work log deleted");
+        refreshEmployees();
+      }
+    });
+  };
+
+  const getInitials = (name: string) => name.split(" ").map(n => n[0]).join("").slice(0, 2);
+  const sendWorkLogToClient = (emp: any, log: any) => {
+    if (!log?.client_id) {
+      toast.error("This work log isn't linked to a client.");
+      return;
+    }
+    const client = clients?.find((c: any) => c.id === log.client_id);
+    if (!client) {
+      toast.error("Linked client not found.");
+      return;
+    }
+    const phone = client.whatsapp || client.phone;
+    if (!phone) {
+      toast.error(`No WhatsApp/phone saved for ${client.name}. Add one in Clients.`);
+      return;
+    }
+    const workType = log.work_type || log.workType || "work";
+    const hours = log.hours ?? "";
+    const msg = `Hi, this is to confirm that ${emp.name} (${emp.displayRole || emp.role}) worked on "${workType}" at ${log.location || ""} on ${formatDateDDMMYYYY(new Date(log.date))} for ${hours} hours. — BusyHub`;
+    const url = waLink(phone, msg);
+    // window.open can be blocked inside Capacitor/WebView; anchor-click falls
+    // back to native intent handling and also survives popup blockers on web.
+    const win = window.open(url, "_blank", "noopener");
+    if (!win) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.click();
+    }
+  };
+
+  const roles: EmployeeRole[] = ["Video Editor", "Graphic Designer", "Social Media Manager", "Photographer", "Campaign Strategist", "Content Writer", "Sales Executive", "Project Manager", "Others"];
+
+  return (
+    <div>
+      <PageHeader
+        title="Employees"
+        subtitle={`${employees.length} team members`}
+        actions={
+          <>
+            <Button 
+              variant="outline" 
+              className="border-primary text-primary hover:bg-primary/10 mr-2"
+              onClick={async () => {
+                toast.loading("Generating logins for existing employees...", { id: 'gen-logins' });
+                let created = 0;
+                let alreadyExist = 0;
+                let noEmail = 0;
+                let errors = 0;
+                for (const emp of employees) {
+                  if (!emp.email) { noEmail++; continue; }
+                  // Attempt to sign up
+                  const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+                    email: emp.email,
+                    password: "Creative@123",
+                    options: { data: { full_name: emp.name } }
+                  });
+                  if (authError) continue;
+                  // Supabase returns a user with empty identities for already-registered emails
+                  const isNew = authData?.user?.identities && authData.user.identities.length > 0;
+                  if (isNew && authData.user!.id !== emp.id) {
+                    const newId = authData.user!.id;
+                    const oldId = emp.id;
+                    // SAFE ID MIGRATION: update all child tables FIRST to prevent cascade data loss
+                    const childTables = [
+                      { table: 'work_logs', col: 'employee_id' },
+                      { table: 'client_assignments', col: 'employee_id' },
+                      { table: 'employee_location_history', col: 'employee_id' },
+                      { table: 'employee_shifts', col: 'employee_id' },
+                      { table: 'society_data', col: 'employee_id' },
+                      { table: 'assigned_societies', col: 'employee_id' },
+                      { table: 'salary_payments', col: 'employee_id' },
+                      { table: 'leads', col: 'assigned_to' },
+                    ];
+                    for (const { table, col } of childTables) {
+                      await supabase.from(table).update({ [col]: newId }).eq(col, oldId);
+                    }
+                    // Copy employee row with new ID, then remove old row
+                    const { data: fullEmp } = await supabase.from('employees').select('*').eq('id', oldId).single();
+                    if (fullEmp) {
+                      const { id: _drop, ...rest } = fullEmp;
+                      const { error: insErr } = await supabase.from('employees').insert({ ...rest, id: newId });
+                      if (insErr) {
+                        console.error(`Failed to migrate ${emp.name}:`, insErr.message);
+                        errors++;
+                        continue;
+                      }
+                      // Safe to delete old row now — child refs already moved
+                      await supabase.from('employees').delete().eq('id', oldId);
+                    }
+                    created++;
+                  } else if (!isNew) {
+                    alreadyExist++;
+                  }
+                }
+                const parts = [];
+                if (created > 0) parts.push(`${created} new logins created`);
+                if (alreadyExist > 0) parts.push(`${alreadyExist} already had logins`);
+                if (noEmail > 0) parts.push(`${noEmail} skipped (no email)`);
+                if (errors > 0) parts.push(`${errors} failed`);
+                toast.success(`${parts.join(', ')}. Default Password: Creative@123`, { id: 'gen-logins' });
+                refreshEmployees();
+              }}
+            >
+              Fix Existing Logins
+            </Button>
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Search by name, role…" className="pl-9 w-56" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetForm(); }}>
+              <DialogTrigger asChild><Button className="bg-primary hover:bg-primary-hover"><Plus className="h-4 w-4" />Add Employee</Button></DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle>{editingEmp ? "Edit Employee" : "Add New Employee"}</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>Full Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Vikram Joshi" /></div>
+                  <div><Label>Role</Label>
+                    <Select value={form.role} onValueChange={(v: EmployeeRole) => setForm({ ...form, role: v, customRole: v === "Others" ? form.customRole : "" })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  {form.role === "Others" && (
+                    <div>
+                      <Label>Specify Role *</Label>
+                      <Input 
+                        value={form.customRole} 
+                        onChange={(e) => setForm({ ...form, customRole: e.target.value })} 
+                        placeholder="e.g. Brand Consultant, Coordinator"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Phone</Label>
+                      <Input 
+                        value={form.phone} 
+                        onChange={(e) => { setForm({ ...form, phone: e.target.value }); setPhoneError(""); }} 
+                        placeholder="+91 98765 43210"
+                        className={phoneError ? "border-red-500" : ""}
+                      />
+                      {phoneError && <p className="text-[11px] text-red-500 mt-0.5">{phoneError}</p>}
+                    </div>
+                    <div><Label>Email *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Required for Login" /></div>
+                  </div>
+                  {!editingEmp && (
+                    <div>
+                      <Label>Login Password</Label>
+                      <Input
+                        type="text"
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        placeholder="Default: Creative@123"
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Employee uses this to log in to the BusyHub Field App</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Lead Target</Label><Input type="number" value={form.target} onChange={(e) => setForm({ ...form, target: +e.target.value })} /></div>
+                    <div><Label>Project</Label>
+                      <Select value={form.project} onValueChange={(v) => setForm({ ...form, project: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="society_one">Society One</SelectItem>
+                          <SelectItem value="smart_tap_ai">Smart Tap AI</SelectItem>
+                          <SelectItem value="both">Both</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => { setAddOpen(false); resetForm(); }}>Cancel</Button>
+                  <Button className="bg-primary hover:bg-primary-hover" onClick={editingEmp ? handleUpdateEmployee : addEmployee}>
+                    {editingEmp ? "Update Employee" : "Save Employee"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
+
+      {/* Summary Pills */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+          <span className="h-2 w-2 bg-green-500 rounded-full" /> Active: {employees.filter(e => e.status === "Active").length}
+        </div>
+        <div className="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+          <span className="h-2 w-2 bg-amber-500 rounded-full" /> On Leave: {employees.filter(e => e.status === "On Leave").length}
+        </div>
+        <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+          <Briefcase className="h-3 w-3" /> On Field Today: {employees.filter(e => e.onFieldToday).length}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {filtered.map((emp) => {
+          const isOpen = detailId === emp.id;
+          const assignedClientsList = clients?.filter((c: any) => emp.assignedClients.includes(c.id)) || [];
+          const advanceTaken = emp.advance_taken ?? 0;
+          const duesPending = emp.dues_pending ?? 0;
+          const totalEarned = (emp.work_logs || []).reduce((s: number, l: any) => s + (l.amount || 0), 0);
+          const netPayable = totalEarned - advanceTaken + duesPending;
+          const joiningDateVal = emp.date_joined || new Date().toISOString();
+
+          const totalHours = emp.work_logs?.reduce((s, l) => {
+            if (l.hours) return s + l.hours;
+            return s;
+          }, 0) || 0;
+
+          return (
+            <Collapsible key={emp.id} open={isOpen} onOpenChange={(open) => setDetailId(open ? emp.id : null)}>
+              <Card className="overflow-hidden">
+                <CollapsibleTrigger className="w-full text-left">
+                  <div className="flex items-center gap-4 p-4 hover:bg-muted/30 transition-colors">
+                    <Avatar className="h-11 w-11 border-2 border-border shrink-0">
+                      <AvatarFallback className="font-bold text-sm bg-primary/10 text-primary">{getInitials(emp.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold truncate max-w-[120px] sm:max-w-none"><Masked>{emp.name}</Masked></span>
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${STATUS_COLORS[emp.status] || ""}`}>{emp.status}</Badge>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-sm text-muted-foreground">{emp.displayRole || emp.role}</span>
+                        {emp.project === 'smart_tap_ai' && <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-violet-100 text-violet-700 border-violet-200">Smart Tap AI</Badge>}
+                        {emp.project === 'both' && <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-100 text-blue-700 border-blue-200">All Projects</Badge>}
+                        {emp.onFieldToday && <span className="text-[9px] px-1.5 py-0 rounded-full bg-primary/10 text-primary font-semibold">On Field</span>}
+                      </div>
+                    </div>
+                    <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+                      <div className="text-center">
+                        <div className="text-xs uppercase">Conversion</div>
+                        <div className="font-semibold text-foreground text-emerald-600">{emp.conversionRate}%</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs uppercase">Workload</div>
+                        <div className="font-semibold text-foreground">{emp.activeLeadsCount} / {emp.target}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs uppercase">Total Earned</div>
+                        <div className="font-semibold text-foreground"><Masked placeholder="₹•••••">{formatINR(totalEarned)}</Masked></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pr-4">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); editEmployee(emp); }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(emp); }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                      </Button>
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                  <div className="border-t border-border p-5 bg-muted/10">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                      {/* Info Section */}
+                      <div className="space-y-3">
+                        <h4 className="font-bold text-sm flex items-center gap-1.5"><UsersIcon className="h-4 w-4" /> Contact &amp; Details</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> <Masked>{emp.phone}</Masked></div>
+                          <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" /> <Masked>{emp.email}</Masked></div>
+                          <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-muted-foreground" /> Joined {formatDateDDMMYYYY(joiningDateVal)}</div>
+                        </div>
+                        <div className="pt-2">
+                          <h5 className="text-xs font-semibold text-muted-foreground mb-1.5">Assigned Clients</h5>
+                          {assignedClientsList.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {assignedClientsList.map(c => (
+                                <span key={c.id} className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium"><Masked>{c.name}</Masked></span>
+                              ))}
+                            </div>
+                          ) : <span className="text-xs text-muted-foreground">No clients assigned</span>}
+                        </div>
+                      </div>
+
+                      {/* Earnings Section */}
+                      <div className="space-y-3">
+                        <h4 className="font-bold text-sm flex items-center gap-1.5"><Wallet className="h-4 w-4" /> Earnings & Dues</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-card rounded-lg border border-border">
+                            <div className="text-xs text-muted-foreground">Total Earned</div>
+                            <div className="text-lg font-bold text-green-600"><Masked placeholder="₹•••••">{formatINR(totalEarned)}</Masked></div>
+                          </div>
+                          <div className="p-3 bg-card rounded-lg border border-border">
+                            <div className="text-xs text-muted-foreground">Advance Taken</div>
+                            <div className={`text-lg font-bold ${advanceTaken > 0 ? "text-amber-600" : ""}`}><Masked placeholder="₹•••••">{formatINR(advanceTaken)}</Masked></div>
+                          </div>
+                          <div className="p-3 bg-card rounded-lg border border-border">
+                            <div className="text-xs text-muted-foreground">Dues Pending</div>
+                            <div className={`text-lg font-bold ${duesPending > 0 ? "text-primary" : ""}`}><Masked placeholder="₹•••••">{formatINR(duesPending)}</Masked></div>
+                          </div>
+                          <div className="p-3 bg-card rounded-lg border border-border">
+                            <div className="text-xs text-muted-foreground">Net Payable</div>
+                            <div className="text-lg font-bold"><Masked placeholder="₹•••••">{formatINR(netPayable)}</Masked></div>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">Work count: {(emp.work_logs || []).length} jobs</div>
+                      </div>
+
+                      {/* Work Log Section */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-sm flex items-center gap-1.5"><Clock className="h-4 w-4" /> Recent Work</h4>
+                          <Button 
+                            size="sm" variant="outline" className="text-xs h-7"
+                            onClick={() => { setSelectedEmp(emp); setLogOpen(true); }}
+                          >
+                            <Plus className="h-3 w-3" /> Log Work
+                          </Button>
+                        </div>
+                        <div className="text-xs text-muted-foreground mb-1">{totalHours.toFixed(1)} hours logged · <Masked placeholder="₹•••••">{formatINR(totalEarned)}</Masked> earned</div>
+                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                          {(emp.work_logs || []).slice(0, 8).map((log: any, i: number) => {
+                            const duration = log.hours ?? (log.reportingTime && log.endTime ? ((new Date(`2000-01-01T${log.endTime}`).getTime() - new Date(`2000-01-01T${log.reportingTime}`).getTime()) / (1000 * 60 * 60)).toFixed(1) : null);
+                            const clientName = clients?.find((c: any) => c.id === log.client_id)?.name || "Unknown Client";
+                            return (
+                              <div key={i} className="group relative flex items-start justify-between p-2 rounded border border-border text-xs hover:bg-muted/30 transition-colors">
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-semibold truncate">{log.work_type}</div>
+                                  <div className="text-muted-foreground truncate">{clientName} · {log.location}</div>
+                                </div>
+                                <div className="text-right shrink-0 ml-2 flex flex-col items-end">
+                                  <div className="font-mono">{formatDateDDMMYYYY(log.date)}</div>
+                                  <div className="text-muted-foreground">{duration ?? "—"}h</div>
+                                  {log.amount > 0 && <div className="font-semibold text-green-600"><Masked placeholder="₹•••">{formatINR(log.amount)}</Masked></div>}
+                                </div>
+                                
+                                {/* Edit/Delete Overlay on hover - only if unlocked */}
+                                <div className="absolute inset-y-0 right-0 items-center gap-1 pr-2 bg-gradient-to-l from-muted/80 via-muted/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex">
+                                  <Button 
+                                    size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                      withShield(() => {
+                                        setSelectedEmp(emp);
+                                        setEditingLog(log);
+                                        setLogForm({
+                                          date: log.date,
+                                          clientId: log.client_id,
+                                          workType: log.work_type,
+                                          location: log.location,
+                                          hours: log.hours || 0,
+                                          amount: log.amount || 0,
+                                          notes: log.notes || "",
+                                        });
+                                        setLogOpen(true);
+                                      });
+                                    }}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                  </Button>
+                                  <Button 
+                                    size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                                    onClick={() => {
+                                      withShield(() => {
+                                        deleteWorkLog(log.id);
+                                      });
+                                    }}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {(emp.work_logs || []).length === 0 && <div className="text-xs text-muted-foreground text-center py-3">No work logged yet</div>}
+                        </div>
+                        {(emp.work_logs || []).length > 0 && (
+                          <Button 
+                            size="sm" variant="ghost" className="text-xs w-full"
+                            onClick={() => sendWorkLogToClient(emp, emp.work_logs[0])}
+                          >Share Latest Log via WhatsApp</Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Field Activity — always shown so owners can configure
+                        the home address BEFORE the employee starts logging
+                        visits. Stats / recent visits sections render only
+                        when there's actually data to show. */}
+                    <div className="space-y-4 pt-5 mt-5 border-t border-border">
+                      <h4 className="font-bold text-sm flex items-center gap-1.5"><Calendar className="h-4 w-4" /> Field Activity</h4>
+
+                      {/* Home-address editor — powers the near-home fraud signal. */}
+                      <EmployeeHomeEditor
+                        employeeId={emp.id}
+                        homeLat={emp.home_lat ?? null}
+                        homeLng={emp.home_lng ?? null}
+                        homeRadiusM={emp.home_radius_m ?? null}
+                        onSaved={refreshEmployees}
+                      />
+
+                      {emp.society_data && emp.society_data.length > 0 ? (
+                        <>
+                          {/* Verification / fraud stats + monthly chart. */}
+                          <EmployeeFieldStats
+                            visits={emp.society_data}
+                            homeLat={emp.home_lat}
+                            homeLng={emp.home_lng}
+                            homeRadiusM={emp.home_radius_m}
+                          />
+
+                        <h5 className="font-semibold text-xs text-muted-foreground mt-4">Recent Society Visits</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {emp.society_data.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map((visit: any, i: number) => {
+                            const vStatus = visit.verification_status || 'pending';
+                            const vCls = vStatus === 'verified_real' ? 'bg-green-50 text-green-700 border-green-200'
+                                       : vStatus === 'verified_fake' ? 'bg-red-50 text-red-700 border-red-200'
+                                       : vStatus === 'unreachable'   ? 'bg-slate-50 text-slate-600 border-slate-200'
+                                       : 'bg-amber-50 text-amber-700 border-amber-200';
+                            const vLabel = vStatus === 'verified_real' ? 'Real'
+                                         : vStatus === 'verified_fake' ? 'Fake'
+                                         : vStatus === 'unreachable'   ? 'No Reply'
+                                         : 'Pending';
+                            return (
+                              <div key={i} className="bg-card p-3 rounded-lg border border-border">
+                                <div className="flex justify-between items-start mb-1 gap-2">
+                                  <div className="font-bold text-sm truncate">{visit.name}</div>
+                                  <Badge variant="outline" className={`text-[10px] shrink-0 ${vCls}`}>{vLabel}</Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground mb-2 line-clamp-2">{visit.address}</div>
+                                <div className="text-xs space-y-1">
+                                  {visit.contact_person && <div><span className="font-medium text-foreground">Contact:</span> {visit.contact_person} {visit.contact_phone && `(${visit.contact_phone})`}</div>}
+                                  {visit.number_of_flats && <div><span className="font-medium text-foreground">Flats:</span> {visit.number_of_flats}</div>}
+                                  {visit.is_mock && (
+                                    <div className="text-red-600 font-medium text-[10px]">⚠ Mock GPS detected</div>
+                                  )}
+                                  <div className="text-[10px] text-muted-foreground mt-2">{new Date(visit.created_at).toLocaleDateString()} {new Date(visit.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-muted-foreground bg-muted/30 rounded-md border border-dashed border-border/60 p-4 text-center">
+                          No field visits yet. Once this employee logs their first society visit from the mobile app, stats and monthly chart will appear here.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          );
+        })}
+      </div>
+
+      {/* Log Work Dialog */}
+      <Dialog open={logOpen} onOpenChange={(open) => { setLogOpen(open); if (!open) setEditingLog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editingLog ? "Edit Work Log" : "Log Work"} — {selectedEmp?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Date</Label><Input type="date" value={logForm.date} onChange={(e) => setLogForm({ ...logForm, date: e.target.value })} /></div>
+            <div><Label>Client *</Label>
+              <Select value={logForm.clientId} onValueChange={(v) => setLogForm({ ...logForm, clientId: v })}>
+                <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Work Type *</Label><Input value={logForm.workType} onChange={(e) => setLogForm({ ...logForm, workType: e.target.value })} placeholder="e.g. Reel Shoot, Post Design" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Location</Label><Input value={logForm.location} onChange={(e) => setLogForm({ ...logForm, location: e.target.value })} placeholder="e.g. Office, Hadapsar" /></div>
+              <div><Label>Hours</Label><Input type="number" min={0} max={24} value={logForm.hours} onChange={(e) => setLogForm({ ...logForm, hours: +e.target.value })} /></div>
+            </div>
+            <div><Label>Amount Earned (₹) *</Label><Input type="number" value={logForm.amount || ""} onChange={(e) => setLogForm({ ...logForm, amount: +e.target.value })} placeholder="e.g. 5000" /></div>
+            <div><Label>Notes</Label><Textarea value={logForm.notes} onChange={(e) => setLogForm({ ...logForm, notes: e.target.value })} rows={2} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLogOpen(false); setEditingLog(null); }}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary-hover" onClick={editingLog ? updateWorkLog : addWorkLog}>
+              {editingLog ? "Update Log" : "Save Log"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Employees;
