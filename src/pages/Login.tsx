@@ -71,11 +71,11 @@ export default function Login() {
           <div className="h-24 w-24 mb-2 flex items-center justify-center">
             <img 
               src="/logo-brand.png" 
-              alt="BusyHub" 
+              alt="BuzyHub" 
               className="w-full h-full object-contain animate-in zoom-in-50 duration-700" 
             />
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">BusyHub</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">BuzyHub</h1>
           <p className="text-xs text-muted-foreground font-bold tracking-widest uppercase opacity-70">Enterprise CRM Workspace</p>
         </div>
 
@@ -92,7 +92,7 @@ export default function Login() {
             <Input 
               id="email"
               type="email" 
-              placeholder="admin@BusyHub.com" 
+              placeholder="admin@BuzyHub.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -145,7 +145,7 @@ export default function Login() {
       </Card>
       
       <div className="fixed bottom-8 text-[11px] text-muted-foreground font-medium tracking-widest uppercase">
-        © 2026 BusyHub CRM · v2.0.4
+        © 2026 BuzyHub CRM · v2.0.4
       </div>
     </div>
   );

@@ -238,7 +238,7 @@ const Clients = () => {
   };
 
   const openSMS = (phone: string, name: string) => {
-    const msg = `Hi ${name}, this is from BusyHub. `;
+    const msg = `Hi ${name}, this is from BuzyHub. `;
     window.open(smsLink(phone, msg), "_blank");
   };
 

@@ -316,7 +316,7 @@ const Projects = () => {
                       <Label htmlFor="project_link">SaaS Link</Label>
                       <Input 
                         id="project_link" 
-                        placeholder="e.g. https://saas.BusyHub.com" 
+                        placeholder="e.g. https://saas.BuzyHub.com" 
                         value={newProject.project_link}
                         onChange={(e) => setNewProject({...newProject, project_link: e.target.value})}
                       />

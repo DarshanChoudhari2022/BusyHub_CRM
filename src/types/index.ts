@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// BusyHub CRM — Comprehensive Type Definitions
+// BuzyHub CRM — Comprehensive Type Definitions
 // Matches full database schema from spec
 // ═══════════════════════════════════════════════════════════
 

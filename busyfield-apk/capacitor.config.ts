@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.BusyHub.field',
+  appId: 'com.BuzyHub.field',
   appName: 'CM Field',
   webDir: 'dist',
   android: {

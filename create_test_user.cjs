@@ -3,7 +3,7 @@ const supabase = createClient('https://kswuwswgmgljpsvrnpbu.supabase.co', 'eyJhb
 
 async function createTestUser() {
   console.log("Creating test user...");
-  const email = "test@BusyHub.com";
+  const email = "test@BuzyHub.com";
   const password = "Creative@123";
   
   const { data: authData, error: authError } = await supabase.auth.signUp({

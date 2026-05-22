@@ -335,7 +335,7 @@ const Leads = () => {
     if (dueLeads.length > 0) {
       toast.info(`🔔 ${dueLeads.length} lead(s) due for follow-up today!`, { duration: 8000 });
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("BusyHub CRM", { body: `${dueLeads.length} lead(s) need follow-up today!` });
+        new Notification("BuzyHub CRM", { body: `${dueLeads.length} lead(s) need follow-up today!` });
       } else if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }

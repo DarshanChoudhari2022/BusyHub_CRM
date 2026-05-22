@@ -209,7 +209,7 @@ export const useNotifications = () => {
           });
           
           if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("BusyHub CRM", {
+            new Notification("BuzyHub CRM", {
               body: newNotif.title + ": " + newNotif.message,
             });
           }

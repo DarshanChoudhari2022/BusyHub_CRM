@@ -25,13 +25,13 @@ const PLATFORM_PRESETS: Record<string, { method: string; desc: string; color: st
 
 const Settings = () => {
   const [company, setCompany] = useState({
-    name: "BusyHub",
+    name: "BuzyHub",
     tagline: "Advertising | Digital Marketing | Branding | Multimedia",
     phone: "+91 98765 43210",
-    email: "hello@BusyHub.in",
+    email: "hello@BuzyHub.in",
     address: "301, Baner Road, Pune — 411045, Maharashtra",
     gst: "27AAECT1234F1Z5",
-    website: "www.BusyHub.in",
+    website: "www.BuzyHub.in",
   });
 
   const [notifications, setNotifications] = useState({

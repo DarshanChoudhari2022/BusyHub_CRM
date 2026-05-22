@@ -316,7 +316,7 @@ export default function FieldApp() {
     if (perm === "granted") toast.success("Location permission granted.");
     else
       toast.error(
-        "Permission denied. Open Settings → Apps → BusyHub Field → Permissions → Location.",
+        "Permission denied. Open Settings → Apps → BuzyHub Field → Permissions → Location.",
       );
   };
 
@@ -348,7 +348,7 @@ export default function FieldApp() {
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
         <div>
-          <h1 className="font-black text-lg tracking-tight">BusyHub Field</h1>
+          <h1 className="font-black text-lg tracking-tight">BuzyHub Field</h1>
           <p className="text-[10px] text-slate-400 uppercase tracking-widest">
             {user.name}
           </p>
@@ -949,13 +949,13 @@ function FieldLogin() {
         <div className="h-24 w-24 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-xl shadow-sky-900/30">
           <img
             src="/logo-brand.png"
-            alt="BusyHub"
+            alt="BuzyHub"
             className="w-full h-full object-contain p-1"
           />
         </div>
         <div className="text-center mt-1">
           <h1 className="text-3xl font-black tracking-tight text-white uppercase">
-            BusyHub
+            BuzyHub
           </h1>
           <div className="mt-1 inline-flex items-center gap-1.5 bg-sky-600/20 border border-sky-500/30 rounded-full px-3 py-0.5">
             <MapPin className="h-3 w-3 text-sky-400" />
@@ -970,7 +970,7 @@ function FieldLogin() {
       <Card className="w-full max-w-sm bg-slate-900 border-slate-800 p-6 shadow-2xl">
         <h2 className="text-lg font-bold text-slate-100 mb-1">Sign In</h2>
         <p className="text-xs text-slate-500 mb-6">
-          Use your BusyHub employee credentials.
+          Use your BuzyHub employee credentials.
         </p>
 
         {error && (
@@ -990,7 +990,7 @@ function FieldLogin() {
               type="email"
               autoCapitalize="none"
               autoCorrect="off"
-              placeholder="you@BusyHub.com"
+              placeholder="you@BuzyHub.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -1045,7 +1045,7 @@ function FieldLogin() {
       </Card>
 
       <p className="mt-8 text-[11px] text-slate-600 tracking-widest uppercase">
-        © 2026 BusyHub · Field Operations
+        © 2026 BuzyHub · Field Operations
       </p>
     </div>
   );

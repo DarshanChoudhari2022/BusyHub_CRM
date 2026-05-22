@@ -19,7 +19,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🪔",
     message:
-      "*Hi {name}*,\n\n🪔 *Wishing you and your family a very Happy Diwali!* 🪔\n\nMay this festival of lights bring prosperity, happiness, and success to your business and personal life.\n\nThank you for your continued trust in us.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216 | 🌐 BusyHubadvertising.com",
+      "*Hi {name}*,\n\n🪔 *Wishing you and your family a very Happy Diwali!* 🪔\n\nMay this festival of lights bring prosperity, happiness, and success to your business and personal life.\n\nThank you for your continued trust in us.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216 | 🌐 BuzyHubadvertising.com",
   },
   {
     key: "NEW_YEAR",
@@ -27,7 +27,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🎉",
     message:
-      "*Hi {name}*,\n\n🎉 *Happy New Year!* 🎉\n\nWishing you a year filled with new opportunities, exciting growth, and great achievements. Looking forward to creating something amazing together this year.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216 | 🌐 BusyHubadvertising.com",
+      "*Hi {name}*,\n\n🎉 *Happy New Year!* 🎉\n\nWishing you a year filled with new opportunities, exciting growth, and great achievements. Looking forward to creating something amazing together this year.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216 | 🌐 BuzyHubadvertising.com",
   },
   {
     key: "HOLI",
@@ -35,7 +35,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🎨",
     message:
-      "*Hi {name}*,\n\n🎨 *Happy Holi!* 🎨\n\nMay this Holi paint your life with the colors of joy, success, and prosperity. Have a vibrant and safe celebration with your loved ones!\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🎨 *Happy Holi!* 🎨\n\nMay this Holi paint your life with the colors of joy, success, and prosperity. Have a vibrant and safe celebration with your loved ones!\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "EID",
@@ -43,7 +43,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🌙",
     message:
-      "*Hi {name}*,\n\n🌙 *Eid Mubarak!* 🌙\n\nMay this blessed occasion fill your life with peace, prosperity, and happiness. Wishing you and your family a joyous Eid.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🌙 *Eid Mubarak!* 🌙\n\nMay this blessed occasion fill your life with peace, prosperity, and happiness. Wishing you and your family a joyous Eid.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "CHRISTMAS",
@@ -51,7 +51,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🎄",
     message:
-      "*Hi {name}*,\n\n🎄 *Merry Christmas!* 🎄\n\nWishing you a season of joy, warmth, and beautiful moments with your loved ones. Thank you for being a valued part of our journey.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🎄 *Merry Christmas!* 🎄\n\nWishing you a season of joy, warmth, and beautiful moments with your loved ones. Thank you for being a valued part of our journey.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "GANESH_CHATURTHI",
@@ -59,7 +59,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🙏",
     message:
-      "*Hi {name}*,\n\n🙏 *Ganpati Bappa Morya!* 🙏\n\nMay Lord Ganesha remove all obstacles from your path and bless you with success, wisdom, and prosperity.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🙏 *Ganpati Bappa Morya!* 🙏\n\nMay Lord Ganesha remove all obstacles from your path and bless you with success, wisdom, and prosperity.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "INDEPENDENCE_DAY",
@@ -67,7 +67,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🇮🇳",
     message:
-      "*Hi {name}*,\n\n🇮🇳 *Happy Independence Day!* 🇮🇳\n\nLet us celebrate the spirit of freedom and the nation's progress. Jai Hind!\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🇮🇳 *Happy Independence Day!* 🇮🇳\n\nLet us celebrate the spirit of freedom and the nation's progress. Jai Hind!\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "RAKSHA_BANDHAN",
@@ -75,7 +75,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🪢",
     message:
-      "*Hi {name}*,\n\n🪢 *Happy Raksha Bandhan!* 🪢\n\nWishing you and your siblings a joyful celebration filled with love, laughter, and lifelong bonds.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🪢 *Happy Raksha Bandhan!* 🪢\n\nWishing you and your siblings a joyful celebration filled with love, laughter, and lifelong bonds.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "GUDI_PADWA",
@@ -83,7 +83,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "festival",
     emoji: "🌼",
     message:
-      "*Hi {name}*,\n\n🌼 *Happy Gudi Padwa!* 🌼\n\nWishing you a year ahead full of prosperity, good health, and new beginnings. Naveen Varshachya Hardik Shubhechha!\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n🌼 *Happy Gudi Padwa!* 🌼\n\nWishing you a year ahead full of prosperity, good health, and new beginnings. Naveen Varshachya Hardik Shubhechha!\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
 
   // ── Marketing ────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "marketing",
     emoji: "📄",
     message:
-      "*Hi {name}*,\n\nGreetings from *BusyHub*! 🎨\n\nWe'd love to share our latest brochure showcasing our complete suite of services — *Branding, Digital Marketing, Reels, Photography, Banners & more*.\n\n📎 *Brochure:* https://BusyHubadvertising.com\n\nLet us know if anything catches your eye, we'd be happy to schedule a quick call.\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\nGreetings from *BuzyHub*! 🎨\n\nWe'd love to share our latest brochure showcasing our complete suite of services — *Branding, Digital Marketing, Reels, Photography, Banners & more*.\n\n📎 *Brochure:* https://BuzyHubadvertising.com\n\nLet us know if anything catches your eye, we'd be happy to schedule a quick call.\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
   {
     key: "PRODUCT_LAUNCH",
@@ -101,7 +101,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "marketing",
     emoji: "🚀",
     message:
-      "*Hi {name}*,\n\n🚀 *Exciting News from BusyHub!* 🚀\n\nWe're thrilled to announce the launch of our new service. Designed to help businesses like yours grow faster and smarter.\n\n✨ *What's new:*\n• Premium creative packages\n• Faster turnaround times\n• Special launch pricing for our valued clients\n\n📞 Reply to this message or call us at +91 9309393216 for an exclusive walkthrough.\n\nWarm regards,\n*Team BusyHub*",
+      "*Hi {name}*,\n\n🚀 *Exciting News from BuzyHub!* 🚀\n\nWe're thrilled to announce the launch of our new service. Designed to help businesses like yours grow faster and smarter.\n\n✨ *What's new:*\n• Premium creative packages\n• Faster turnaround times\n• Special launch pricing for our valued clients\n\n📞 Reply to this message or call us at +91 9309393216 for an exclusive walkthrough.\n\nWarm regards,\n*Team BuzyHub*",
   },
   {
     key: "OFFER",
@@ -109,7 +109,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "marketing",
     emoji: "💥",
     message:
-      "*Hi {name}*,\n\n💥 *Limited-time Offer from BusyHub!* 💥\n\nGet *up to 25% off* on all our branding & social media packages this month. Perfect time to refresh your brand or kick off a new campaign.\n\n📞 Call us at +91 9309393216 or simply reply here to grab this deal before it ends.\n\nWarm regards,\n*Team BusyHub*",
+      "*Hi {name}*,\n\n💥 *Limited-time Offer from BuzyHub!* 💥\n\nGet *up to 25% off* on all our branding & social media packages this month. Perfect time to refresh your brand or kick off a new campaign.\n\n📞 Call us at +91 9309393216 or simply reply here to grab this deal before it ends.\n\nWarm regards,\n*Team BuzyHub*",
   },
   {
     key: "REENGAGE",
@@ -117,7 +117,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "marketing",
     emoji: "👋",
     message:
-      "*Hi {name}*,\n\n👋 Hope you're doing well! It's been a while.\n\nJust dropping in to say hi from the team at *BusyHub*. We've recently rolled out some exciting new services and would love to catch up on how your brand has been growing.\n\nLet us know if you'd like to chat — even a quick coffee call works!\n\nWarm regards,\n*Team BusyHub*\n📞 +91 9309393216",
+      "*Hi {name}*,\n\n👋 Hope you're doing well! It's been a while.\n\nJust dropping in to say hi from the team at *BuzyHub*. We've recently rolled out some exciting new services and would love to catch up on how your brand has been growing.\n\nLet us know if you'd like to chat — even a quick coffee call works!\n\nWarm regards,\n*Team BuzyHub*\n📞 +91 9309393216",
   },
 
   // ── General ──────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ export const BROADCAST_TEMPLATES: BroadcastTemplate[] = [
     category: "general",
     emoji: "✏️",
     message:
-      "*Hi {name}*,\n\n[Type your message here]\n\nWarm regards,\n*Team BusyHub*",
+      "*Hi {name}*,\n\n[Type your message here]\n\nWarm regards,\n*Team BuzyHub*",
   },
 ];
 

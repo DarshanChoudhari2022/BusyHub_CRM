@@ -283,7 +283,7 @@ const Employees = () => {
     }
     const workType = log.work_type || log.workType || "work";
     const hours = log.hours ?? "";
-    const msg = `Hi, this is to confirm that ${emp.name} (${emp.displayRole || emp.role}) worked on "${workType}" at ${log.location || ""} on ${formatDateDDMMYYYY(new Date(log.date))} for ${hours} hours. — BusyHub`;
+    const msg = `Hi, this is to confirm that ${emp.name} (${emp.displayRole || emp.role}) worked on "${workType}" at ${log.location || ""} on ${formatDateDDMMYYYY(new Date(log.date))} for ${hours} hours. — BuzyHub`;
     const url = waLink(phone, msg);
     // window.open can be blocked inside Capacitor/WebView; anchor-click falls
     // back to native intent handling and also survives popup blockers on web.
@@ -421,7 +421,7 @@ const Employees = () => {
                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                         placeholder="Default: Creative@123"
                       />
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Employee uses this to log in to the BusyHub Field App</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Employee uses this to log in to the BuzyHub Field App</p>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-3">

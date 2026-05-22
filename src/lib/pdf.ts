@@ -163,25 +163,25 @@ const BRAND_GRAY = { r: 120, g: 120, b: 120 };
 
 // ── Company Info ──────────────────────────────────────────────
 const COMPANY = {
-  name: "BusyHub",
+  name: "BuzyHub",
   tagline: "Advertising | Digital Marketing | Branding | Multimedia",
   phone1: "+91 7447332829",
   phone2: "+91 9890976952",
-  email: "BusyHubadvertising@gmail.com",
-  website: "https://BusyHubadvertising.com/",
+  email: "BuzyHubadvertising@gmail.com",
+  website: "https://BuzyHubadvertising.com/",
   address: "Pune, Maharashtra, India",
   whatsapp: "+91 9309393216",
 };
 
 // ── Default Partner Agreement Terms ───────────────────────────
 export const DEFAULT_PARTNER_TERMS = [
-  "1. NATURE OF RELATIONSHIP: This agreement establishes a non-exclusive Referral Partnership. The Partner acts as an independent consultant and not as an employee, legal partner, or representative of BusyHub.",
+  "1. NATURE OF RELATIONSHIP: This agreement establishes a non-exclusive Referral Partnership. The Partner acts as an independent consultant and not as an employee, legal partner, or representative of BuzyHub.",
   "2. COMMISSION ELIGIBILITY: Commission is calculated on the 'Net Project Value' (excluding GST, third-party media spends, hardware costs, and outsourced software licenses). Commission is only earned once the client makes the full payment.",
-  "3. LEAD VALIDITY: All leads must be registered via the BusyHub CRM. A lead is valid for 90 days from registration. If no conversion occurs within this window, the lead becomes open for other partners or internal sales.",
-  "4. PAYMENT TERMS: Commissions are disbursed within 10-15 working days after BusyHub receives the full and final payment from the client. TDS will be deducted as per government norms where applicable.",
-  "5. CONFIDENTIALITY: The Partner agrees to maintain absolute confidentiality regarding BusyHub's internal pricing structures, strategic processes, and proprietary client data.",
+  "3. LEAD VALIDITY: All leads must be registered via the BuzyHub CRM. A lead is valid for 90 days from registration. If no conversion occurs within this window, the lead becomes open for other partners or internal sales.",
+  "4. PAYMENT TERMS: Commissions are disbursed within 10-15 working days after BuzyHub receives the full and final payment from the client. TDS will be deducted as per government norms where applicable.",
+  "5. CONFIDENTIALITY: The Partner agrees to maintain absolute confidentiality regarding BuzyHub's internal pricing structures, strategic processes, and proprietary client data.",
   "6. BRAND GUIDELINES: The Partner may represent themselves as an 'Authorized Referral Partner'. Use of the company logo on any external marketing material requires prior written approval from the management.",
-  "7. NON-SOLICITATION: During the term of this agreement and for one year thereafter, the Partner shall not directly or indirectly solicit or attempt to hire any employees of BusyHub.",
+  "7. NON-SOLICITATION: During the term of this agreement and for one year thereafter, the Partner shall not directly or indirectly solicit or attempt to hire any employees of BuzyHub.",
   "8. TERMINATION: Either party may terminate this agreement with a 15-day written notice. Any unethical practices or misrepresentation will lead to immediate termination and forfeiture of all pending commissions.",
   "9. LEGAL JURISDICTION: This agreement is governed by the laws of India. Any disputes arising shall be subject to the exclusive jurisdiction of the courts in Pune, Maharashtra."
 ];
@@ -193,7 +193,7 @@ export const PROFESSIONAL_TERMS_QUOTATION = [
   "3. TAXATION: All prices are exclusive of GST (18%) unless specifically mentioned as 'Inclusive'. GST will be added to the final invoice as per statutory requirements.",
   "4. REVISIONS: Two rounds of minor modifications are included in the quoted price. Any major design changes or additions to the scope will be billed separately as per hourly rates.",
   "5. CONTENT PROVISION: The client is responsible for providing all necessary text, images, logos, and specific data required for the project. Delays in content provision will impact the delivery timeline.",
-  "6. APPROVALS: Approval of drafts must be provided in writing (Email/WhatsApp). BusyHub is not liable for errors missed by the client during the approval process.",
+  "6. APPROVALS: Approval of drafts must be provided in writing (Email/WhatsApp). BuzyHub is not liable for errors missed by the client during the approval process.",
   "7. INTELLECTUAL PROPERTY: Final creative rights and source files are transferred to the client ONLY after the full and final payment is cleared in our bank account.",
 ];
 
@@ -300,7 +300,7 @@ function addLetterhead(doc: jsPDF, logoBase64: string | null) {
     doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("BusyHub", 15, 20);
+    doc.text("BuzyHub", 15, 20);
   }
 
   // Right side: Company details
@@ -345,7 +345,7 @@ function addFooter(doc: jsPDF, pageNum: number) {
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BRAND_GRAY.r, BRAND_GRAY.g, BRAND_GRAY.b);
-  doc.text("BusyHub ADVERTISING", centerX, footerY + 6, { align: "center" });
+  doc.text("BuzyHub ADVERTISING", centerX, footerY + 6, { align: "center" });
 
   doc.setTextColor(BRAND_RED.r, BRAND_RED.g, BRAND_RED.b);
   doc.setFontSize(9);
@@ -1046,7 +1046,7 @@ export async function generateReceiptPDF(receipt: {
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(BRAND_BLACK.r, BRAND_BLACK.g, BRAND_BLACK.b);
-  doc.text("FOR BusyHub ADVERTISING", margin, y + 5);
+  doc.text("FOR BuzyHub ADVERTISING", margin, y + 5);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(BRAND_GRAY.r, BRAND_GRAY.g, BRAND_GRAY.b);

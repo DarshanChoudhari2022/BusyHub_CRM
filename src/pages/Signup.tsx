@@ -82,7 +82,7 @@ export default function Signup() {
           <div className="h-24 w-24 mb-2 flex items-center justify-center">
             <img 
               src="/logo-brand.png" 
-              alt="BusyHub" 
+              alt="BuzyHub" 
               className="w-full h-full object-contain animate-in zoom-in-50 duration-700" 
             />
           </div>
@@ -116,7 +116,7 @@ export default function Signup() {
             <Input 
               id="email"
               type="email" 
-              placeholder="john@BusyHub.com" 
+              placeholder="john@BuzyHub.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
@@ -177,7 +177,7 @@ export default function Signup() {
       </Card>
       
       <div className="fixed bottom-8 text-[11px] text-muted-foreground font-medium tracking-widest uppercase">
-        © 2026 BusyHub CRM · v2.0.4
+        © 2026 BuzyHub CRM · v2.0.4
       </div>
     </div>
   );

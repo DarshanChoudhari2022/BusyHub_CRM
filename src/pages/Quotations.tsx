@@ -858,7 +858,7 @@ const Quotations = () => {
                           value={bankDetails} 
                           onChange={(e) => setBankDetails(e.target.value)} 
                           rows={3} 
-                          placeholder="Bank Name: HDFC Bank&#10;A/C Name: BusyHub&#10;A/C No: 1234567890&#10;IFSC: HDFC0001234" 
+                          placeholder="Bank Name: HDFC Bank&#10;A/C Name: BuzyHub&#10;A/C No: 1234567890&#10;IFSC: HDFC0001234" 
                           className="text-xs font-mono"
                         />
                       </div>
@@ -867,7 +867,7 @@ const Quotations = () => {
                         <Input 
                           value={upiId} 
                           onChange={(e) => setUpiId(e.target.value)} 
-                          placeholder="BusyHub@upi" 
+                          placeholder="BuzyHub@upi" 
                           className="text-xs font-mono"
                         />
                       </div>

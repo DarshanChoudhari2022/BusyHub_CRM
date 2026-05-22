@@ -229,7 +229,7 @@ const SmartLeadHub = () => {
   }, [leads.length, slaBreachedLeads.length]);
 
   const openWhatsApp = (phone: string, name: string) => window.open(waLink(phone, WHATSAPP_TEMPLATES.LEAD_GENERAL(name)), "_blank");
-  const openSMS = (phone: string, name: string) => window.open(smsLink(phone, `Hi ${name}, thank you for your inquiry. We'll get back to you shortly. — BusyHub`), "_blank");
+  const openSMS = (phone: string, name: string) => window.open(smsLink(phone, `Hi ${name}, thank you for your inquiry. We'll get back to you shortly. — BuzyHub`), "_blank");
 
   const formatTime = (seconds: number) => {
     if (!seconds) return "—";

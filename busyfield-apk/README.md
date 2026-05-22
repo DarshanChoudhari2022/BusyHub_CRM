@@ -1,4 +1,4 @@
-# CM Field — BusyHub Field Operations App
+# CM Field — BuzyHub Field Operations App
 
 Lightweight Capacitor web-wrapper APK for field employee tracking.
 

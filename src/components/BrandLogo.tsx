@@ -23,7 +23,7 @@ export const BrandLogo = ({ collapsed = false }: Props) => {
       {!collapsed && (
         <div className="leading-tight">
           <div className="font-black text-[16px] tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
-            BusyHub
+            BuzyHub
           </div>
           <div className="text-[9px] text-muted-foreground font-medium uppercase tracking-[0.1em]">
             Advertising · Branding

@@ -8,7 +8,7 @@ Deno.serve(async (req: Request) => {
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
-    const VERIFY_TOKEN = Deno.env.get("META_VERIFY_TOKEN") || "BusyHub_meta_token_123";
+    const VERIFY_TOKEN = Deno.env.get("META_VERIFY_TOKEN") || "BuzyHub_meta_token_123";
 
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       console.log("Meta webhook verified successfully!");

@@ -183,7 +183,7 @@ export default function BroadcastHub() {
   // ── Composer ──────────────────────────────────────────────────
   const [activeTemplate, setActiveTemplate] = useState<BroadcastTemplate>(BROADCAST_TEMPLATES[0]);
   const [message, setMessage] = useState<string>(BROADCAST_TEMPLATES[0].message);
-  const [emailSubject, setEmailSubject] = useState<string>(`${BROADCAST_TEMPLATES[0].emoji} ${BROADCAST_TEMPLATES[0].label} from BusyHub`);
+  const [emailSubject, setEmailSubject] = useState<string>(`${BROADCAST_TEMPLATES[0].emoji} ${BROADCAST_TEMPLATES[0].label} from BuzyHub`);
   const [attachments, setAttachments] = useState<{ name: string; url: string; type: "pdf" | "image" }[]>([]);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const attachFileRef = useRef<HTMLInputElement>(null);
@@ -215,7 +215,7 @@ export default function BroadcastHub() {
     if (!t) return;
     setActiveTemplate(t);
     setMessage(t.message);
-    setEmailSubject(`${t.emoji} ${t.label} from BusyHub`);
+    setEmailSubject(`${t.emoji} ${t.label} from BuzyHub`);
   };
 
   // ── Send dialogs ──────────────────────────────────────────────
@@ -904,7 +904,7 @@ function PhonePanel({ onImported, userId, userName }: { onImported: () => void; 
         <div className="flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-[11px] text-amber-900 leading-snug">
-            Phone import works inside the BusyHub CRM APK only. On the web, upload a CSV/Excel instead.
+            Phone import works inside the BuzyHub CRM APK only. On the web, upload a CSV/Excel instead.
           </p>
         </div>
       </div>

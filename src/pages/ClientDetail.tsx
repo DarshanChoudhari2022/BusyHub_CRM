@@ -364,7 +364,7 @@ const ClientDetail = () => {
       meet.action_items ? `\n*Action Items:*\n${meet.action_items}` : "",
       meet.next_meeting_date ? `\n*Next Meeting:* ${formatDateDDMMYYYY(new Date(meet.next_meeting_date))}` : "",
       meet.notes ? `\n*Notes:* ${meet.notes}` : "",
-      "\n— BusyHub",
+      "\n— BuzyHub",
     ].filter(Boolean).join("\n");
     window.open(waLink(client.whatsapp || client.phone, lines), "_blank");
   };
@@ -426,7 +426,7 @@ const ClientDetail = () => {
   };
 
   const sendPaymentReminderSMS = () => {
-    const msg = `Hi ${client.name}, this is a friendly reminder from BusyHub regarding your pending balance of ${formatINR(client.outstanding)}. Kindly process the payment at the earliest. Thank you!`;
+    const msg = `Hi ${client.name}, this is a friendly reminder from BuzyHub regarding your pending balance of ${formatINR(client.outstanding)}. Kindly process the payment at the earliest. Thank you!`;
     window.open(smsLink(client.phone, msg), "_blank");
   };
 
@@ -487,7 +487,7 @@ const ClientDetail = () => {
           <div className="flex items-center gap-2">
             {client.outstanding > 0 && (client.whatsapp || client.phone) && (
               <Button size="sm" variant="outline" className="text-amber-700 border-amber-300 hover:bg-amber-50 gap-1.5" onClick={() => {
-                const outstandingMsg = `Dear ${client.name},\n\nThis is a friendly reminder from *BusyHub* regarding your outstanding balance.\n\n📋 *Total Billed:* ${formatINR(client.totalBilled)}\n✅ *Received:* ${formatINR(totalReceived)}\n⚠️ *Outstanding:* ${formatINR(client.outstanding)}\n\nKindly arrange the pending payment at the earliest convenience.\n\nThank you for your business! 🙏\n— BusyHub`;
+                const outstandingMsg = `Dear ${client.name},\n\nThis is a friendly reminder from *BuzyHub* regarding your outstanding balance.\n\n📋 *Total Billed:* ${formatINR(client.totalBilled)}\n✅ *Received:* ${formatINR(totalReceived)}\n⚠️ *Outstanding:* ${formatINR(client.outstanding)}\n\nKindly arrange the pending payment at the earliest convenience.\n\nThank you for your business! 🙏\n— BuzyHub`;
                 window.open(waLink(client.whatsapp || client.phone, outstandingMsg), "_blank");
               }}>
                 <Send className="h-3.5 w-3.5" /> Outstanding Reminder
@@ -666,7 +666,7 @@ const ClientDetail = () => {
                   </div>
                   {(client.whatsapp || client.phone) && (
                     <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => {
-                      window.open(waLink(client.whatsapp || client.phone, `Hi ${client.name}, reminder about our meeting on ${formatDateDDMMYYYY(new Date(upcoming.next_meeting_date))}.\n— BusyHub`), "_blank");
+                      window.open(waLink(client.whatsapp || client.phone, `Hi ${client.name}, reminder about our meeting on ${formatDateDDMMYYYY(new Date(upcoming.next_meeting_date))}.\n— BuzyHub`), "_blank");
                     }}><Send className="h-3.5 w-3.5 mr-1" /> Remind via WhatsApp</Button>
                   )}
                 </div>
