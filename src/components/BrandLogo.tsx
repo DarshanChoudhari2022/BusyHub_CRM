@@ -12,7 +12,7 @@ export const BrandLogo = ({ collapsed = false }: Props) => {
         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary-hover rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
         <img 
           src={logo} 
-          alt="CM" 
+          alt="BuzyHub" 
           className={cn(
             "relative rounded-lg object-contain bg-white border border-border/50 shadow-sm transition-all duration-300",
             collapsed ? "h-9 w-9" : "h-10 w-10"
