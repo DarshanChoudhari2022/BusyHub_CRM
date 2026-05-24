@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.BuzyHub.hub',
-  appName: 'BuzyHub CRM',
+  appName: 'BuzyHubCRM',
   webDir: 'dist',
   // Bundle dist/ into the APK so the app works without relying on Vercel
   // being reachable. Any pushed web update still requires a rebuild-sync.

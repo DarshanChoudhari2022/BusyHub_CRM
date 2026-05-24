@@ -286,24 +286,43 @@ const Verification = () => {
                     onClick={() => p.url && setPhotoOpen(p.url)}
                   >
                     {p.url ? (
-                      <img
-                        src={p.url}
-                        alt={p.label}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        loading="lazy"
-                      />
+                      <>
+                        {/* Shimmer shown while image loads */}
+                        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-muted/60 via-muted/30 to-muted/60 bg-[length:200%_100%]" />
+                        <img
+                          src={p.url}
+                          alt={p.label}
+                          loading="lazy"
+                          decoding="async"
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform relative z-10"
+                          onLoad={(e) => {
+                            // Hide shimmer once loaded
+                            const prev = (e.target as HTMLImageElement).previousElementSibling as HTMLElement;
+                            if (prev) prev.style.display = 'none';
+                          }}
+                          onError={(e) => {
+                            // Hide shimmer on error, show fallback
+                            const prev = (e.target as HTMLImageElement).previousElementSibling as HTMLElement;
+                            if (prev) prev.style.display = 'none';
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
                         <ImageIcon className="w-6 h-6 opacity-40" />
                         <span className="text-[10px] mt-1">No {p.label.toLowerCase()}</span>
                       </div>
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-0.5 font-medium">
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-0.5 font-medium z-20">
                       {p.label}
                     </div>
                   </div>
                 ))}
               </div>
+
 
               {/* Meta grid */}
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs mb-3">

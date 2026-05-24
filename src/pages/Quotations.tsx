@@ -757,17 +757,6 @@ const Quotations = () => {
                     <p className="text-[10px] text-muted-foreground mt-1">Linked bills appear inside the Project &gt; Sales tab and count toward project sales totals.</p>
                   </div>
 
-                  {/* Service Presets */}
-                  <div>
-                    <Label className="mb-1 block text-xs text-muted-foreground">Quick Add Service</Label>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {SERVICE_PRESETS.map(preset => (
-                        <Button key={preset.serviceName} variant="outline" size="sm" className="text-[11px] h-7"
-                          onClick={() => setItems([...items.filter(i => i.serviceName || i.description), { id: crypto.randomUUID(), serviceName: preset.serviceName, description: preset.serviceName, quantity: 1, rate: preset.rate, amount: preset.rate }])}
-                        >{preset.serviceName} — {formatINR(preset.rate)}</Button>
-                      ))}
-                    </div>
-                  </div>
 
                   {/* Line Items */}
                   <div>
