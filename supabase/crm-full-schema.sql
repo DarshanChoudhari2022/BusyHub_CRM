@@ -336,7 +336,10 @@ CREATE TABLE IF NOT EXISTS public.quotations (
 );
 
 -- Add missing references for leads to quotations
+ALTER TABLE public.leads DROP CONSTRAINT IF EXISTS fk_quotation;
 ALTER TABLE public.leads ADD CONSTRAINT fk_quotation FOREIGN KEY (quotation_id) REFERENCES public.quotations(id) ON DELETE SET NULL;
+
+ALTER TABLE public.leads DROP CONSTRAINT IF EXISTS fk_bill;
 ALTER TABLE public.leads ADD CONSTRAINT fk_bill FOREIGN KEY (bill_id) REFERENCES public.quotations(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS public.quotation_items (
