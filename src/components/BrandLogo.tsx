@@ -1,4 +1,3 @@
-const logo = "/logo-brand.png";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -7,30 +6,33 @@ interface Props {
 
 export const BrandLogo = ({ collapsed = false }: Props) => {
   return (
-    <div className={cn("flex items-center gap-3 transition-all duration-300", collapsed ? "px-0 justify-center" : "px-2")}>
-      <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary-hover rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-        <img 
-          src={logo} 
-          alt="BuzyHub" 
-          className={cn(
-            "relative rounded-lg object-contain bg-white border border-border/50 shadow-sm transition-all duration-300",
-            collapsed ? "h-9 w-9" : "h-10 w-10"
-          )} 
+    <div className={cn("flex items-center gap-2.5 transition-all duration-200", collapsed ? "justify-center" : "")}>
+      {/* Logo image / fallback icon */}
+      <div className="h-8 w-8 rounded-lg overflow-hidden shrink-0 bg-blue-600 flex items-center justify-center">
+        <img
+          src="/logo-brand.png"
+          alt="BuzyHub"
+          className="h-full w-full object-contain"
+          onError={(e) => {
+            const el = e.target as HTMLImageElement;
+            el.style.display = "none";
+            // Show fallback letter
+            (el.parentElement as HTMLElement).innerHTML =
+              '<span style="color:white;font-weight:800;font-size:14px;letter-spacing:-0.03em">BH</span>';
+          }}
         />
       </div>
-      
+
       {!collapsed && (
-        <div className="leading-tight">
-          <div className="font-black text-[16px] tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
+        <div className="leading-tight min-w-0">
+          <div className="font-bold text-[14px] tracking-tight text-gray-900 leading-none">
             BuzyHub
           </div>
-          <div className="text-[9px] text-muted-foreground font-medium uppercase tracking-[0.1em]">
-            Advertising · Branding
+          <div className="text-[10px] text-gray-400 font-medium mt-0.5 leading-none">
+            CRM Workspace
           </div>
         </div>
       )}
     </div>
   );
 };
-

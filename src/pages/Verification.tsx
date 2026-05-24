@@ -10,10 +10,11 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ShieldCheck, ShieldAlert, ShieldX, PhoneCall, Search, MapPin, Clock,
-  Image as ImageIcon, AlertTriangle, User as UserIcon, Phone,
+  Image as ImageIcon, AlertTriangle, User as UserIcon, Phone, Download,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/export";
 
 type VStatus = "pending" | "verified_real" | "verified_fake" | "unreachable";
 type Filter = "pending" | "verified_real" | "verified_fake" | "unreachable" | "all";
@@ -66,6 +67,34 @@ const Verification = () => {
       .limit(200);
     if (!error && data) setRows(data as any);
     setLoading(false);
+  };
+
+  const handleExportExcel = () => {
+    if (rows.length === 0) {
+      toast.error("No entries available to export");
+      return;
+    }
+    const exportData = rows.map((r, index) => ({
+      "S.No": index + 1,
+      "Society Name": r.name,
+      "Address": r.address || "—",
+      "Contact Person": r.contact_person || "—",
+      "Contact Phone": r.contact_phone || "—",
+      "Flats Count": r.number_of_flats || 0,
+      "Verification Status": r.verification_status === "verified_real" ? "Real" :
+                             r.verification_status === "verified_fake" ? "Fake" :
+                             r.verification_status === "unreachable" ? "Unreachable" : "Pending",
+      "Verification Notes": r.verification_notes || "—",
+      "Submitted By": r.employees?.name || "Unknown",
+      "Submission Time": new Date(r.created_at).toLocaleString("en-IN"),
+      "Latitude": r.lat || "—",
+      "Longitude": r.lng || "—",
+      "Accuracy (m)": r.accuracy_m || "—",
+      "Is Mock GPS": r.is_mock ? "Yes" : "No",
+    }));
+
+    exportToCSV(exportData, "Verification_Queue_Entries");
+    toast.success("Excel sheet downloaded successfully!");
   };
 
   useEffect(() => {
@@ -122,11 +151,37 @@ const Verification = () => {
         verified_by: user?.id || null,
       })
       .eq("id", row.id);
-    setSaving(false);
+    
     if (error) {
+      setSaving(false);
       toast.error("Failed to update: " + error.message);
       return;
     }
+
+    if (status === "verified_real") {
+      const { error: leadError } = await supabase
+        .from("leads")
+        .insert({
+          name: row.contact_person || row.name,
+          organization: row.name,
+          address: row.address,
+          phone: row.contact_phone,
+          whatsapp: row.contact_phone,
+          assigned_to: row.employee_id,
+          source: "Field Visit",
+          stage: "New",
+          heat: "Warm",
+          notes: `Verified Society Visit. Flats: ${row.number_of_flats || "—"}. Notes: ${notes || "—"}`
+        });
+
+      if (leadError) {
+        toast.warning("Society marked as Real, but failed to create a lead automatically: " + leadError.message);
+      } else {
+        toast.success("Lead created automatically from verified visit!");
+      }
+    }
+
+    setSaving(false);
     toast.success(`Visit marked ${STATUS_META[status].label}`);
     setNotesOpen(null);
     setNotes("");
@@ -139,10 +194,20 @@ const Verification = () => {
         title="Verification Queue"
         subtitle="Calling team: confirm field visits with the chairman / contact person"
         actions={
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1.5 py-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            {counts.pending} pending
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1.5 bg-white border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold py-1.5"
+              onClick={handleExportExcel}
+            >
+              <Download className="w-3.5 h-3.5 text-gray-500" /> Export Excel
+            </Button>
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1.5 py-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              {counts.pending} pending
+            </Badge>
+          </div>
         }
       />
 

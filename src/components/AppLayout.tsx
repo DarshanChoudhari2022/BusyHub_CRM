@@ -6,11 +6,13 @@ import { TopBar } from "@/components/TopBar";
 export const AppLayout = () => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-muted/30">
+      {/* Outer: light gray page background like Crisp */}
+      <div className="min-h-screen flex w-full" style={{ background: "hsl(210 20% 96%)" }}>
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <main className="flex-1 p-4 md:p-6 lg:p-8">
+          {/* Inner: scrollable content area — slightly inset */}
+          <main className="flex-1 overflow-auto p-4 md:p-5">
             <Outlet />
           </main>
         </div>
