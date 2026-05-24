@@ -205,13 +205,27 @@ const LiveTracking = () => {
       return;
     }
 
-    const olaStyleUrl = `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json?api_key=${import.meta.env.VITE_OLA_MAPS_API_KEY || ''}`;
+    const olaApiKey = import.meta.env.VITE_OLA_MAPS_API_KEY || '';
+    const olaStyleUrl = `https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json?api_key=${olaApiKey}`;
+
+    // transformRequest injects the api_key into every sub-request maplibre makes
+    // (tiles, glyphs, sprites) so that Ola Maps tiles load correctly.
+    const transformRequest = useOlaMaps
+      ? (url: string) => {
+          if (url.includes('api.olamaps.io')) {
+            const separator = url.includes('?') ? '&' : '?';
+            return { url: `${url}${separator}api_key=${olaApiKey}` };
+          }
+          return { url };
+        }
+      : undefined;
 
     const map = new (mapEngine as any).Map({
       container: mapContainerRef.current,
       style: useOlaMaps ? olaStyleUrl : MAP_STYLE,
       center: [78.9629, 20.5937], // Center of India [lng, lat]
       zoom: 5,
+      ...(transformRequest ? { transformRequest } : {}),
     });
 
     map.addControl(new (mapEngine as any).NavigationControl(), 'top-right');
