@@ -946,11 +946,11 @@ function FieldLogin() {
     <div className="flex flex-col min-h-screen bg-slate-950 items-center justify-center px-6 py-10">
       {/* Logo + branding */}
       <div className="flex flex-col items-center mb-10 gap-3">
-        <div className="h-24 w-24 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-xl shadow-sky-900/30">
+        <div className="h-24 w-24 rounded-2xl overflow-hidden bg-slate-900 flex items-center justify-center shadow-xl shadow-sky-900/30 ring-1 ring-sky-500/20">
           <img
             src="/logo-brand.png"
             alt="BuzyHub"
-            className="w-full h-full object-contain p-1"
+            className="w-full h-full object-cover rounded-2xl"
           />
         </div>
         <div className="text-center mt-1">
