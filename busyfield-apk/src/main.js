@@ -781,122 +781,25 @@ async function loadMyVisits() {
   const rangeLabel = visitsRange === 'today' ? 'today' : visitsRange === 'week' ? 'this week' : 'this month';
   subtitle.textContent = `${count} societ${count === 1 ? 'y' : 'ies'} visited ${rangeLabel}`;
 
-  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
-  const activeVisits = cachedVisits.filter(v => new Date(v.created_at) >= eightHoursAgo);
-
   if (count === 0) {
     list.innerHTML = '<div class="empty-state"><p>No visits logged yet.</p></div>';
     return;
   }
 
-  if (activeVisits.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>All ${count} logged visits are older than 8 hours. Details are hidden, but your total count is preserved.</p></div>`;
-    return;
-  }
-
-  list.innerHTML = activeVisits.map(v => {
-    const time = new Date(v.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    const date = new Date(v.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    const vs = v.verification_status || 'pending';
-    return `<div class="visit-card" data-visit-id="${v.id}">
-      <div class="visit-card-top">
-        <div class="visit-card-name">${esc(v.name)}</div>
-        <div class="visit-card-time">${date}, ${time}</div>
-      </div>
-      ${v.address ? `<div class="visit-card-address">${esc(v.address)}</div>` : ''}
-      <div class="visit-card-meta">
-        ${v.number_of_flats ? `<span class="visit-card-tag">${v.number_of_flats} flats</span>` : ''}
-        ${v.contact_person ? `<span class="visit-card-tag">${esc(v.contact_person)}</span>` : ''}
-        <span class="visit-card-tag ${vs === 'pending' ? 'pending' : vs === 'verified' ? 'verified' : 'rejected'}">${vs}</span>
-      </div>
-    </div>`;
-  }).join('');
+  list.innerHTML = `<div class="empty-state"><p>Visit details are hidden for security. Your total count of ${count} is preserved.</p></div>`;
 }
 
 // ─── Visit Detail Modal ──────────────────────────────────────────────────────────
 function openVisitModal(visitId) {
-  const v = cachedVisits.find(x => x.id === visitId);
-  if (!v) return;
-
-  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
-  if (new Date(v.created_at) < eightHoursAgo) {
-    // Show a toast message if they somehow try to open it
-    toast('Details are no longer available for older visits.', 'error');
-    return;
-  }
-
-  const modal = $('#visit-modal');
-  const body = $('#modal-body');
-  const time = new Date(v.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-
-  let photosHtml = '';
-  if (v.selfie_url || v.building_photo_url) {
-    photosHtml = `<div class="modal-photos">
-      ${v.selfie_url ? `<img src="${v.selfie_url}" alt="Selfie" />` : ''}
-      ${v.building_photo_url ? `<img src="${v.building_photo_url}" alt="Building" />` : ''}
-    </div>`;
-  }
-
-  body.innerHTML = `
-    <div class="modal-row"><span class="modal-row-label">Society</span><span class="modal-row-value">${esc(v.name)}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Address</span><span class="modal-row-value">${esc(v.address || '-')}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Contact Person</span><span class="modal-row-value">${esc(v.contact_person || '-')}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Contact Phone</span><span class="modal-row-value">${esc(v.contact_phone || '-')}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Flats</span><span class="modal-row-value">${v.number_of_flats || '-'}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Status</span><span class="modal-row-value">${v.verification_status || 'pending'}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Logged</span><span class="modal-row-value">${time}</span></div>
-    ${photosHtml}
-    <div class="modal-actions">
-      <button class="btn btn-primary btn-sm" id="btn-edit-visit" data-vid="${v.id}">Edit Details</button>
-    </div>
-  `;
-  modal.classList.add('open');
-
-  $('#btn-edit-visit').addEventListener('click', () => openEditForm(v));
+  toast('Details are not available for visits.', 'error');
+  return;
 }
 
 function openShopVisitModal(shopVisitId) {
-  const v = cachedShopVisits.find(x => x.id === shopVisitId);
-  if (!v) return;
-
-  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
-  if (new Date(v.created_at) < eightHoursAgo) {
-    toast('Details are no longer available for older visits.', 'error');
-    return;
-  }
-
-  const modal = $('#visit-modal');
-  const body = $('#modal-body');
-  $('#modal-title').textContent = 'Shop Visit Details';
-  const time = new Date(v.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-
-  let photosHtml = '';
-  if (v.selfie_url || v.shop_photo_url) {
-    photosHtml = `<div class="modal-photos">
-      ${v.selfie_url ? `<img src="${v.selfie_url}" alt="Selfie" />` : ''}
-      ${v.shop_photo_url ? `<img src="${v.shop_photo_url}" alt="Shop Photo" />` : ''}
-    </div>`;
-  }
-
-  const interestLabel = v.interest_status === 'interested' ? 'Interested' : v.interest_status === 'not_interested' ? 'Not Interested' : v.interest_status === 'follow_up' ? 'Follow Up' : 'Not Contacted';
-
-  body.innerHTML = `
-    <div class="modal-row"><span class="modal-row-label">Owner/Person</span><span class="modal-row-value">${esc(v.person_name)}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Mobile</span><span class="modal-row-value">${esc(v.mobile || '-')}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Shop Name</span><span class="modal-row-value">${esc(v.shop_name || '-')}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Interest</span><span class="modal-row-value">${interestLabel}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Next Call</span><span class="modal-row-value">${v.next_call_date || '-'}</span></div>
-    <div class="modal-row"><span class="modal-row-label">Logged</span><span class="modal-row-value">${time}</span></div>
-    ${v.google_map_link ? `<div class="modal-row"><span class="modal-row-label">Location</span><span class="modal-row-value"><a href="${v.google_map_link}" target="_blank" style="color:#38BDF8">View on Map</a></span></div>` : ''}
-    ${photosHtml}
-    <div class="modal-actions">
-      <button class="btn btn-outline-danger btn-sm" id="btn-close-shop-detail">Close</button>
-    </div>
-  `;
-  modal.classList.add('open');
-
-  $('#btn-close-shop-detail').addEventListener('click', closeModal);
+  toast('Details are not available for visits.', 'error');
+  return;
 }
+
 
 function closeModal() { $('#visit-modal').classList.remove('open'); }
 
@@ -1055,38 +958,12 @@ async function loadShopVisits() {
   const rangeLabel = visitsRange === 'today' ? 'today' : visitsRange === 'week' ? 'this week' : 'this month';
   subtitle.textContent = `${count} shop${count === 1 ? '' : 's'} visited ${rangeLabel}`;
 
-  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
-  const activeShopVisits = cachedShopVisits.filter(v => new Date(v.created_at) >= eightHoursAgo);
-
   if (count === 0) {
     list.innerHTML = '<div class="empty-state"><p>No shop visits logged yet.</p></div>';
     return;
   }
 
-  if (activeShopVisits.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>All ${count} logged shop visits are older than 8 hours. Details are hidden, but your total count is preserved.</p></div>`;
-    return;
-  }
-
-  list.innerHTML = activeShopVisits.map(v => {
-    const time = new Date(v.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    const date = new Date(v.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    const interest = v.interest_status || 'not_contacted';
-    const interestLabel = interest === 'interested' ? 'Interested' : interest === 'not_interested' ? 'Not Interested' : interest === 'follow_up' ? 'Follow Up' : 'Not Contacted';
-    const interestClass = interest === 'interested' ? 'verified' : interest === 'not_interested' ? 'rejected' : 'pending';
-    return `<div class="visit-card" data-shop-visit-id="${v.id}">
-      <div class="visit-card-top">
-        <div class="visit-card-name">${esc(v.person_name)}</div>
-        <div class="visit-card-time">${date}, ${time}</div>
-      </div>
-      ${v.shop_name ? `<div class="visit-card-address">${esc(v.shop_name)}</div>` : ''}
-      <div class="visit-card-meta">
-        ${v.mobile ? `<span class="visit-card-tag">${esc(v.mobile)}</span>` : ''}
-        <span class="visit-card-tag ${interestClass}">${interestLabel}</span>
-        ${v.next_call_date ? `<span class="visit-card-tag">Follow: ${v.next_call_date}</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+  list.innerHTML = `<div class="empty-state"><p>Shop visit details are hidden for security. Your total count of ${count} is preserved.</p></div>`;
 }
 
 // ─── Log Visit ─────────────────────────────────────────────────────────────────
