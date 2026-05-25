@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ShieldCheck, ShieldAlert, ShieldX, PhoneCall, Search, MapPin, Clock,
-  Image as ImageIcon, AlertTriangle, User as UserIcon, Phone, Download,
+  Image as ImageIcon, AlertTriangle, User as UserIcon, Phone, Download, Calendar,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -59,6 +59,199 @@ const Verification = () => {
   const [notesOpen, setNotesOpen] = useState<{ row: VisitRow; status: VStatus } | null>(null);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [groupBy, setGroupBy] = useState<"none" | "date" | "employee">("none");
+
+  const groupedByDate = useMemo(() => {
+    if (groupBy !== "date") return null;
+    const groups: Record<string, Record<string, VisitRow[]>> = {};
+    for (const r of visible) {
+      const isoDate = r.created_at.slice(0, 10);
+      if (!groups[isoDate]) groups[isoDate] = {};
+      const empId = r.employee_id;
+      if (!groups[isoDate][empId]) groups[isoDate][empId] = [];
+      groups[isoDate][empId].push(r);
+    }
+    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [visible, groupBy]);
+
+  const groupedByEmployee = useMemo(() => {
+    if (groupBy !== "employee") return null;
+    const groups: Record<string, Record<string, VisitRow[]>> = {};
+    for (const r of visible) {
+      const empId = r.employee_id;
+      if (!groups[empId]) groups[empId] = {};
+      const isoDate = r.created_at.slice(0, 10);
+      if (!groups[empId][isoDate]) groups[empId][isoDate] = [];
+      groups[empId][isoDate].push(r);
+    }
+    return Object.entries(groups).sort((a, b) => {
+      const nameA = a[0] ? (visible.find(v => v.employee_id === a[0])?.employees?.name || "Unknown") : "Unknown";
+      const nameB = b[0] ? (visible.find(v => v.employee_id === b[0])?.employees?.name || "Unknown") : "Unknown";
+      return nameA.localeCompare(nameB);
+    });
+  }, [visible, groupBy]);
+
+  const renderVisitCard = (row: VisitRow) => {
+    const status = (row.verification_status || "pending") as VStatus;
+    const meta = STATUS_META[status];
+    const Icon = meta.icon;
+    const mapsHref = row.lat && row.lng ? `https://www.google.com/maps?q=${row.lat},${row.lng}` : null;
+    return (
+      <Card key={row.id} className="p-4 border-border/60">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <div className="font-bold text-base truncate">{row.name}</div>
+            <div className="text-xs text-muted-foreground line-clamp-1">{row.address}</div>
+          </div>
+          <Badge variant="outline" className={meta.cls + " gap-1 shrink-0"}>
+            <Icon className="w-3 h-3" />
+            {meta.label}
+          </Badge>
+        </div>
+
+        {/* Photos + key facts */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {[
+            { url: row.selfie_url, label: "Selfie" },
+            { url: row.building_photo_url, label: "Building" },
+          ].map((p, i) => (
+            <div
+              key={i}
+              className="aspect-square bg-muted/40 rounded-md border border-border overflow-hidden relative cursor-pointer group"
+              onClick={() => p.url && setPhotoOpen(p.url)}
+            >
+              {p.url ? (
+                <>
+                  {/* Shimmer shown while image loads */}
+                  <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-muted/60 via-muted/30 to-muted/60 bg-[length:200%_100%]" />
+                  <img
+                    src={getOptimizedUrl(p.url, 300)}
+                    alt={p.label}
+                    loading="lazy"
+                    decoding="async"
+                    width={300}
+                    height={300}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform relative z-10"
+                    onLoad={(e) => {
+                      // Hide shimmer once loaded
+                      const prev = (e.target as HTMLImageElement).previousElementSibling as HTMLElement;
+                      if (prev) prev.style.display = 'none';
+                    }}
+                    onError={(e) => {
+                      // Hide shimmer on error, show fallback
+                      const prev = (e.target as HTMLImageElement).previousElementSibling as HTMLElement;
+                      if (prev) prev.style.display = 'none';
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+                  <ImageIcon className="w-6 h-6 opacity-40" />
+                  <span className="text-[10px] mt-1">No {p.label.toLowerCase()}</span>
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-0.5 font-medium z-20">
+                {p.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Meta grid */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs mb-3">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <UserIcon className="w-3 h-3" />
+            <span className="font-medium text-foreground truncate">{row.employees?.name || "Unknown"}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+          </div>
+          {row.contact_person && (
+            <div className="flex items-center gap-1.5 text-muted-foreground col-span-2">
+              <UserIcon className="w-3 h-3" />
+              Chairman: <span className="text-foreground font-medium">{row.contact_person}</span>
+            </div>
+          )}
+          {row.contact_phone && (
+            <a
+              href={`tel:${row.contact_phone}`}
+              className="flex items-center gap-1.5 text-primary hover:underline col-span-2"
+            >
+              <Phone className="w-3 h-3" />
+              {row.contact_phone}
+            </a>
+          )}
+          {row.number_of_flats != null && (
+            <div className="text-muted-foreground">
+              Flats: <span className="font-medium text-foreground">{row.number_of_flats}</span>
+            </div>
+          )}
+          {mapsHref && (
+            <a
+              href={mapsHref}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-primary hover:underline"
+            >
+              <MapPin className="w-3 h-3" />
+              Open in Maps
+            </a>
+          )}
+          {row.accuracy_m != null && (
+            <div className="text-muted-foreground">
+              GPS: ±{Math.round(row.accuracy_m)}m
+            </div>
+          )}
+        </div>
+
+        {/* Mock-GPS warning */}
+        {row.is_mock && (
+          <div className="flex items-center gap-2 p-2 mb-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4" />
+            Mock GPS detected on this submission!
+          </div>
+        )}
+
+        {/* Existing notes */}
+        {row.verification_notes && (
+          <div className="text-xs bg-muted/40 rounded-md p-2 mb-3 border border-border/40">
+            <span className="font-semibold">Notes:</span> {row.verification_notes}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            size="sm"
+            variant={status === "verified_real" ? "default" : "outline"}
+            className={status === "verified_real" ? "bg-green-600 hover:bg-green-700" : "border-green-300 text-green-700 hover:bg-green-50"}
+            onClick={() => beginMark(row, "verified_real")}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Real
+          </Button>
+          <Button
+            size="sm"
+            variant={status === "verified_fake" ? "default" : "outline"}
+            className={status === "verified_fake" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-300 text-blue-700 hover:bg-blue-50"}
+            onClick={() => beginMark(row, "verified_fake")}
+          >
+            <ShieldX className="w-3.5 h-3.5 mr-1" /> Fake
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => beginMark(row, "unreachable")}
+          >
+            <PhoneCall className="w-3.5 h-3.5 mr-1" /> No Reply
+          </Button>
+        </div>
+      </Card>
+    );
+  };
 
   const fetchRows = async () => {
     const { data, error } = await supabase
@@ -213,26 +406,54 @@ const Verification = () => {
       />
 
       {/* Filter pills */}
-      <div className="flex flex-wrap gap-2">
-        {(["pending", "verified_real", "verified_fake", "unreachable", "all"] as const).map((k) => {
-          const active = filter === k;
-          const meta = k === "all" ? { label: "All", cls: "bg-slate-100 text-slate-700 border-slate-200", icon: ShieldAlert } : STATUS_META[k];
-          const Icon = meta.icon as any;
-          return (
-            <button
-              key={k}
-              onClick={() => setFilter(k)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : meta.cls + " hover:opacity-80"}`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {meta.label}
-              <span className={`ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-semibold ${active ? "bg-white/20" : "bg-white"}`}>
-                {(counts as any)[k]}
-              </span>
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap gap-2">
+          {(["pending", "verified_real", "verified_fake", "unreachable", "all"] as const).map((k) => {
+            const active = filter === k;
+            const meta = k === "all" ? { label: "All", cls: "bg-slate-100 text-slate-700 border-slate-200", icon: ShieldAlert } : STATUS_META[k];
+            const Icon = meta.icon as any;
+            return (
+              <button
+                key={k}
+                onClick={() => setFilter(k)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : meta.cls + " hover:opacity-80"}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {meta.label}
+                <span className={`ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-semibold ${active ? "bg-white/20" : "bg-white"}`}>
+                  {(counts as any)[k]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
         <div className="flex-1" />
+        <div className="flex items-center gap-1.5 text-xs mr-2">
+          <span className="text-muted-foreground font-medium">Group by:</span>
+          <div className="bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg flex gap-1">
+            <Button
+              variant={groupBy === "none" ? "secondary" : "ghost"}
+              className={`h-8 px-2.5 text-[11px] font-semibold ${groupBy === 'none' ? 'bg-white shadow-sm' : ''}`}
+              onClick={() => setGroupBy("none")}
+            >
+              None
+            </Button>
+            <Button
+              variant={groupBy === "date" ? "secondary" : "ghost"}
+              className={`h-8 px-2.5 text-[11px] font-semibold ${groupBy === 'date' ? 'bg-white shadow-sm' : ''}`}
+              onClick={() => setGroupBy("date")}
+            >
+              Date
+            </Button>
+            <Button
+              variant={groupBy === "employee" ? "secondary" : "ghost"}
+              className={`h-8 px-2.5 text-[11px] font-semibold ${groupBy === 'employee' ? 'bg-white shadow-sm' : ''}`}
+              onClick={() => setGroupBy("employee")}
+            >
+              Employee
+            </Button>
+          </div>
+        </div>
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -255,169 +476,100 @@ const Verification = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {visible.map((row) => {
-          const status = (row.verification_status || "pending") as VStatus;
-          const meta = STATUS_META[status];
-          const Icon = meta.icon;
-          const mapsHref = row.lat && row.lng ? `https://www.google.com/maps?q=${row.lat},${row.lng}` : null;
-          return (
-            <Card key={row.id} className="p-4 border-border/60">
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0">
-                  <div className="font-bold text-base truncate">{row.name}</div>
-                  <div className="text-xs text-muted-foreground line-clamp-1">{row.address}</div>
-                </div>
-                <Badge variant="outline" className={meta.cls + " gap-1 shrink-0"}>
-                  <Icon className="w-3 h-3" />
-                  {meta.label}
-                </Badge>
-              </div>
+      {groupBy === "none" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {visible.map((row) => renderVisitCard(row))}
+        </div>
+      )}
 
-              {/* Photos + key facts */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {[
-                  { url: row.selfie_url, label: "Selfie" },
-                  { url: row.building_photo_url, label: "Building" },
-                ].map((p, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square bg-muted/40 rounded-md border border-border overflow-hidden relative cursor-pointer group"
-                    onClick={() => p.url && setPhotoOpen(p.url)}
-                  >
-                    {p.url ? (
-                      <>
-                        {/* Shimmer shown while image loads */}
-                        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-muted/60 via-muted/30 to-muted/60 bg-[length:200%_100%]" />
-                        <img
-                          src={getOptimizedUrl(p.url, 300)}
-                          alt={p.label}
-                          loading="lazy"
-                          decoding="async"
-                          width={300}
-                          height={300}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform relative z-10"
-                          onLoad={(e) => {
-                            // Hide shimmer once loaded
-                            const prev = (e.target as HTMLImageElement).previousElementSibling as HTMLElement;
-                            if (prev) prev.style.display = 'none';
-                          }}
-                          onError={(e) => {
-                            // Hide shimmer on error, show fallback
-                            const prev = (e.target as HTMLImageElement).previousElementSibling as HTMLElement;
-                            if (prev) prev.style.display = 'none';
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
-                        <ImageIcon className="w-6 h-6 opacity-40" />
-                        <span className="text-[10px] mt-1">No {p.label.toLowerCase()}</span>
+      {groupBy === "date" && (
+        <div className="space-y-6">
+          {groupedByDate?.map(([isoDate, empsObj]) => {
+            const formattedDate = new Date(isoDate + "T00:00:00").toLocaleDateString("en-IN", {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+            const dayTotal = Object.values(empsObj).reduce((sum, list) => sum + list.length, 0);
+
+            return (
+              <div key={isoDate} className="border border-border/60 rounded-lg overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
+                <div className="bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center">
+                  <div className="font-bold text-xs flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                    {formattedDate}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-950 font-bold">{dayTotal} visits</Badge>
+                </div>
+
+                <div className="p-4 space-y-6">
+                  {Object.entries(empsObj).map(([empId, list]) => {
+                    const empNameStr = list[0]?.employees?.name || "Unknown";
+                    return (
+                      <div key={empId} className="space-y-3">
+                        <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1 border-l-2 border-slate-400 pl-2">
+                          <UserIcon className="w-3.5 h-3.5" />
+                          {empNameStr} <span className="font-normal text-muted-foreground/80">({list.length} submissions)</span>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {list.map((row) => renderVisitCard(row))}
+                        </div>
                       </div>
-                    )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-0.5 font-medium z-20">
-                      {p.label}
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
+            );
+          })}
+        </div>
+      )}
 
+      {groupBy === "employee" && (
+        <div className="space-y-6">
+          {groupedByEmployee?.map(([empId, datesObj]) => {
+            const empTotal = Object.values(datesObj).reduce((sum, list) => sum + list.length, 0);
+            const empNameStr = Object.values(datesObj)[0]?.[0]?.employees?.name || "Unknown";
 
-              {/* Meta grid */}
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs mb-3">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <UserIcon className="w-3 h-3" />
-                  <span className="font-medium text-foreground truncate">{row.employees?.name || "Unknown"}</span>
+            return (
+              <div key={empId} className="border border-border/60 rounded-lg overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
+                <div className="bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center">
+                  <div className="font-bold text-xs flex items-center gap-1.5">
+                    <UserIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    {empNameStr}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-950 font-bold">{empTotal} visits</Badge>
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+
+                <div className="p-4 space-y-6">
+                  {Object.entries(datesObj)
+                    .sort((a, b) => b[0].localeCompare(a[0]))
+                    .map(([isoDate, list]) => {
+                      const formattedDate = new Date(isoDate + "T00:00:00").toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      });
+
+                      return (
+                        <div key={isoDate} className="space-y-3">
+                          <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1 border-l-2 border-slate-400 pl-2">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formattedDate} <span className="font-normal text-muted-foreground/80">({list.length} submissions)</span>
+                          </div>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {list.map((row) => renderVisitCard(row))}
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
-                {row.contact_person && (
-                  <div className="flex items-center gap-1.5 text-muted-foreground col-span-2">
-                    <UserIcon className="w-3 h-3" />
-                    Chairman: <span className="text-foreground font-medium">{row.contact_person}</span>
-                  </div>
-                )}
-                {row.contact_phone && (
-                  <a
-                    href={`tel:${row.contact_phone}`}
-                    className="flex items-center gap-1.5 text-primary hover:underline col-span-2"
-                  >
-                    <Phone className="w-3 h-3" />
-                    {row.contact_phone}
-                  </a>
-                )}
-                {row.number_of_flats != null && (
-                  <div className="text-muted-foreground">
-                    Flats: <span className="font-medium text-foreground">{row.number_of_flats}</span>
-                  </div>
-                )}
-                {mapsHref && (
-                  <a
-                    href={mapsHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-primary hover:underline"
-                  >
-                    <MapPin className="w-3 h-3" />
-                    Open in Maps
-                  </a>
-                )}
-                {row.accuracy_m != null && (
-                  <div className="text-muted-foreground">
-                    GPS: ±{Math.round(row.accuracy_m)}m
-                  </div>
-                )}
               </div>
-
-              {/* Mock-GPS warning */}
-              {row.is_mock && (
-                <div className="flex items-center gap-2 p-2 mb-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-xs font-medium">
-                  <AlertTriangle className="w-4 h-4" />
-                  Mock GPS detected on this submission!
-                </div>
-              )}
-
-              {/* Existing notes */}
-              {row.verification_notes && (
-                <div className="text-xs bg-muted/40 rounded-md p-2 mb-3 border border-border/40">
-                  <span className="font-semibold">Notes:</span> {row.verification_notes}
-                </div>
-              )}
-
-              {/* Action buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  size="sm"
-                  variant={status === "verified_real" ? "default" : "outline"}
-                  className={status === "verified_real" ? "bg-green-600 hover:bg-green-700" : "border-green-300 text-green-700 hover:bg-green-50"}
-                  onClick={() => beginMark(row, "verified_real")}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Real
-                </Button>
-                <Button
-                  size="sm"
-                  variant={status === "verified_fake" ? "default" : "outline"}
-                  className={status === "verified_fake" ? "bg-blue-600 hover:bg-blue-700" : "border-blue-300 text-blue-700 hover:bg-blue-50"}
-                  onClick={() => beginMark(row, "verified_fake")}
-                >
-                  <ShieldX className="w-3.5 h-3.5 mr-1" /> Fake
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => beginMark(row, "unreachable")}
-                >
-                  <PhoneCall className="w-3.5 h-3.5 mr-1" /> No Reply
-                </Button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Photo lightbox */}
       <Dialog open={!!photoOpen} onOpenChange={(o) => !o && setPhotoOpen(null)}>
