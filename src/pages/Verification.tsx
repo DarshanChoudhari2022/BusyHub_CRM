@@ -62,6 +62,55 @@ const Verification = () => {
 
   const [groupBy, setGroupBy] = useState<"none" | "date" | "employee">("none");
 
+  /* ── Data fetching ────────────────────────────────────────── */
+  const fetchRows = async () => {
+    const { data, error } = await supabase
+      .from("society_data")
+      .select("*, employees:employees!employee_id(id, name, role)")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (!error && data) setRows(data as any);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchRows();
+    // Refresh every 30s so newly submitted visits appear without manual reload.
+    const i = setInterval(fetchRows, 30_000);
+
+    // Realtime: catch new inserts/updates immediately.
+    const ch = supabase
+      .channel("society_data_verification")
+      .on("postgres_changes", { event: "*", schema: "public", table: "society_data" }, () => fetchRows())
+      .subscribe();
+
+    return () => {
+      clearInterval(i);
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  /* ── Derived / computed data (order matters!) ─────────────── */
+  const counts = useMemo(() => {
+    const c = { pending: 0, verified_real: 0, verified_fake: 0, unreachable: 0, all: rows.length };
+    for (const r of rows) {
+      const s = (r.verification_status || "pending") as VStatus;
+      if (s in c) (c as any)[s]++;
+    }
+    return c;
+  }, [rows]);
+
+  const visible = useMemo(() => {
+    return rows.filter((r) => {
+      const s = (r.verification_status || "pending") as VStatus;
+      if (filter !== "all" && s !== filter) return false;
+      if (!search) return true;
+      const hay = `${r.name} ${r.address} ${r.contact_person || ""} ${r.contact_phone || ""} ${r.employees?.name || ""}`.toLowerCase();
+      return hay.includes(search.toLowerCase());
+    });
+  }, [rows, filter, search]);
+
+  // These two memos MUST come AFTER `visible` since they depend on it
   const groupedByDate = useMemo(() => {
     if (groupBy !== "date") return null;
     const groups: Record<string, Record<string, VisitRow[]>> = {};
@@ -86,12 +135,97 @@ const Verification = () => {
       groups[empId][isoDate].push(r);
     }
     return Object.entries(groups).sort((a, b) => {
-      const nameA = a[0] ? (visible.find(v => v.employee_id === a[0])?.employees?.name || "Unknown") : "Unknown";
-      const nameB = b[0] ? (visible.find(v => v.employee_id === b[0])?.employees?.name || "Unknown") : "Unknown";
+      const nameA = visible.find(v => v.employee_id === a[0])?.employees?.name || "Unknown";
+      const nameB = visible.find(v => v.employee_id === b[0])?.employees?.name || "Unknown";
       return nameA.localeCompare(nameB);
     });
   }, [visible, groupBy]);
 
+  /* ── Actions ──────────────────────────────────────────────── */
+  const beginMark = (row: VisitRow, status: VStatus) => {
+    setNotes(row.verification_notes || "");
+    setNotesOpen({ row, status });
+  };
+
+  const confirmMark = async () => {
+    if (!notesOpen) return;
+    setSaving(true);
+    const { row, status } = notesOpen;
+    const { error } = await supabase
+      .from("society_data")
+      .update({
+        verification_status: status,
+        verification_notes: notes || null,
+        verified_at: new Date().toISOString(),
+        verified_by: user?.id || null,
+      })
+      .eq("id", row.id);
+    
+    if (error) {
+      setSaving(false);
+      toast.error("Failed to update: " + error.message);
+      return;
+    }
+
+    if (status === "verified_real") {
+      const { error: leadError } = await supabase
+        .from("leads")
+        .insert({
+          name: row.contact_person || row.name,
+          organization: row.name,
+          address: row.address,
+          phone: row.contact_phone,
+          whatsapp: row.contact_phone,
+          assigned_to: row.employee_id,
+          source: "Field Visit",
+          stage: "New",
+          heat: "Warm",
+          notes: `Verified Society Visit. Flats: ${row.number_of_flats || "—"}. Notes: ${notes || "—"}`
+        });
+
+      if (leadError) {
+        toast.warning("Society marked as Real, but failed to create a lead automatically: " + leadError.message);
+      } else {
+        toast.success("Lead created automatically from verified visit!");
+      }
+    }
+
+    setSaving(false);
+    toast.success(`Visit marked ${STATUS_META[status].label}`);
+    setNotesOpen(null);
+    setNotes("");
+    fetchRows();
+  };
+
+  const handleExportExcel = () => {
+    if (rows.length === 0) {
+      toast.error("No entries available to export");
+      return;
+    }
+    const exportData = rows.map((r, index) => ({
+      "S.No": index + 1,
+      "Society Name": r.name,
+      "Address": r.address || "—",
+      "Contact Person": r.contact_person || "—",
+      "Contact Phone": r.contact_phone || "—",
+      "Flats Count": r.number_of_flats || 0,
+      "Verification Status": r.verification_status === "verified_real" ? "Real" :
+                             r.verification_status === "verified_fake" ? "Fake" :
+                             r.verification_status === "unreachable" ? "Unreachable" : "Pending",
+      "Verification Notes": r.verification_notes || "—",
+      "Submitted By": r.employees?.name || "Unknown",
+      "Submission Time": new Date(r.created_at).toLocaleString("en-IN"),
+      "Latitude": r.lat || "—",
+      "Longitude": r.lng || "—",
+      "Accuracy (m)": r.accuracy_m || "—",
+      "Is Mock GPS": r.is_mock ? "Yes" : "No",
+    }));
+
+    exportToCSV(exportData, "Verification_Queue_Entries");
+    toast.success("Excel sheet downloaded successfully!");
+  };
+
+  /* ── Render helpers ───────────────────────────────────────── */
   const renderVisitCard = (row: VisitRow) => {
     const status = (row.verification_status || "pending") as VStatus;
     const meta = STATUS_META[status];
@@ -253,135 +387,7 @@ const Verification = () => {
     );
   };
 
-  const fetchRows = async () => {
-    const { data, error } = await supabase
-      .from("society_data")
-      .select("*, employees:employees!employee_id(id, name, role)")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (!error && data) setRows(data as any);
-    setLoading(false);
-  };
-
-  const handleExportExcel = () => {
-    if (rows.length === 0) {
-      toast.error("No entries available to export");
-      return;
-    }
-    const exportData = rows.map((r, index) => ({
-      "S.No": index + 1,
-      "Society Name": r.name,
-      "Address": r.address || "—",
-      "Contact Person": r.contact_person || "—",
-      "Contact Phone": r.contact_phone || "—",
-      "Flats Count": r.number_of_flats || 0,
-      "Verification Status": r.verification_status === "verified_real" ? "Real" :
-                             r.verification_status === "verified_fake" ? "Fake" :
-                             r.verification_status === "unreachable" ? "Unreachable" : "Pending",
-      "Verification Notes": r.verification_notes || "—",
-      "Submitted By": r.employees?.name || "Unknown",
-      "Submission Time": new Date(r.created_at).toLocaleString("en-IN"),
-      "Latitude": r.lat || "—",
-      "Longitude": r.lng || "—",
-      "Accuracy (m)": r.accuracy_m || "—",
-      "Is Mock GPS": r.is_mock ? "Yes" : "No",
-    }));
-
-    exportToCSV(exportData, "Verification_Queue_Entries");
-    toast.success("Excel sheet downloaded successfully!");
-  };
-
-  useEffect(() => {
-    fetchRows();
-    // Refresh every 30s so newly submitted visits appear without manual reload.
-    const i = setInterval(fetchRows, 30_000);
-
-    // Realtime: catch new inserts/updates immediately.
-    const ch = supabase
-      .channel("society_data_verification")
-      .on("postgres_changes", { event: "*", schema: "public", table: "society_data" }, () => fetchRows())
-      .subscribe();
-
-    return () => {
-      clearInterval(i);
-      supabase.removeChannel(ch);
-    };
-  }, []);
-
-  const counts = useMemo(() => {
-    const c = { pending: 0, verified_real: 0, verified_fake: 0, unreachable: 0, all: rows.length };
-    for (const r of rows) {
-      const s = (r.verification_status || "pending") as VStatus;
-      if (s in c) (c as any)[s]++;
-    }
-    return c;
-  }, [rows]);
-
-  const visible = useMemo(() => {
-    return rows.filter((r) => {
-      const s = (r.verification_status || "pending") as VStatus;
-      if (filter !== "all" && s !== filter) return false;
-      if (!search) return true;
-      const hay = `${r.name} ${r.address} ${r.contact_person || ""} ${r.contact_phone || ""} ${r.employees?.name || ""}`.toLowerCase();
-      return hay.includes(search.toLowerCase());
-    });
-  }, [rows, filter, search]);
-
-  const beginMark = (row: VisitRow, status: VStatus) => {
-    setNotes(row.verification_notes || "");
-    setNotesOpen({ row, status });
-  };
-
-  const confirmMark = async () => {
-    if (!notesOpen) return;
-    setSaving(true);
-    const { row, status } = notesOpen;
-    const { error } = await supabase
-      .from("society_data")
-      .update({
-        verification_status: status,
-        verification_notes: notes || null,
-        verified_at: new Date().toISOString(),
-        verified_by: user?.id || null,
-      })
-      .eq("id", row.id);
-    
-    if (error) {
-      setSaving(false);
-      toast.error("Failed to update: " + error.message);
-      return;
-    }
-
-    if (status === "verified_real") {
-      const { error: leadError } = await supabase
-        .from("leads")
-        .insert({
-          name: row.contact_person || row.name,
-          organization: row.name,
-          address: row.address,
-          phone: row.contact_phone,
-          whatsapp: row.contact_phone,
-          assigned_to: row.employee_id,
-          source: "Field Visit",
-          stage: "New",
-          heat: "Warm",
-          notes: `Verified Society Visit. Flats: ${row.number_of_flats || "—"}. Notes: ${notes || "—"}`
-        });
-
-      if (leadError) {
-        toast.warning("Society marked as Real, but failed to create a lead automatically: " + leadError.message);
-      } else {
-        toast.success("Lead created automatically from verified visit!");
-      }
-    }
-
-    setSaving(false);
-    toast.success(`Visit marked ${STATUS_META[status].label}`);
-    setNotesOpen(null);
-    setNotes("");
-    fetchRows();
-  };
-
+  /* ── Main render ──────────────────────────────────────────── */
   return (
     <div className="space-y-4">
       <PageHeader
