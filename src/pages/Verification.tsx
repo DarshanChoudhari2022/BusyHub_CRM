@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export";
+import { getOptimizedUrl } from "@/lib/image";
 
 type VStatus = "pending" | "verified_real" | "verified_fake" | "unreachable";
 type Filter = "pending" | "verified_real" | "verified_fake" | "unreachable" | "all";
@@ -290,7 +291,7 @@ const Verification = () => {
                         {/* Shimmer shown while image loads */}
                         <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-muted/60 via-muted/30 to-muted/60 bg-[length:200%_100%]" />
                         <img
-                          src={p.url}
+                          src={getOptimizedUrl(p.url, 300)}
                           alt={p.label}
                           loading="lazy"
                           decoding="async"

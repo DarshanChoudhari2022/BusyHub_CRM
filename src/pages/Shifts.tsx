@@ -13,6 +13,7 @@ import {
   Download, Filter, Activity,
 } from "lucide-react";
 import { format, formatDistanceToNow, differenceInMinutes } from "date-fns";
+import { getOptimizedUrl } from "@/lib/image";
 
 interface Shift {
   id: string;
@@ -286,9 +287,10 @@ const Shifts = () => {
                         >
                           {p.url ? (
                             <img
-                              src={p.url}
+                              src={getOptimizedUrl(p.url, 300)}
                               alt={p.label}
                               loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             />
                           ) : (

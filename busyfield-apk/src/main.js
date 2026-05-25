@@ -4,12 +4,14 @@ import { supabase } from './supabase.js';
 const HEARTBEAT_MS = 2 * 60 * 1000;   // push location every 2 min
 const MIN_ACCURACY_M = 200;            // reject visit if GPS fuzzier than this
 const STATS_INTERVAL = 30_000;         // refresh dashboard stats every 30s
+const LOCATION_CHECK_MS = 30_000;      // check location permission every 30s
 
 // ─── App state ─────────────────────────────────────────────────────────────────
 let currentUser = null;
 let isTracking = false;
 let heartbeatTimer = null;
 let statsTimer = null;
+let locationWatchdogTimer = null;
 let activeShiftId = null;
 let lastSyncTs = null;
 let selfieFile = null;
@@ -24,6 +26,7 @@ let shopSelfieFile = null;
 let shopBuildingFile = null;
 let shopInterest = 'interested';
 let cachedShopVisits = [];
+let locationGranted = false;
 
 // ─── DOM helpers ───────────────────────────────────────────────────────────────
 const $ = (s) => document.querySelector(s);
@@ -75,6 +78,122 @@ function getCurrentPosition(highAccuracy = true) {
       maximumAge: 10000,
     });
   });
+}
+
+// ─── Location Permission Enforcer ──────────────────────────────────────────────
+function createLocationBlocker() {
+  // Create a fullscreen blocking overlay — no way to close it
+  if (document.getElementById('location-blocker')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'location-blocker';
+  overlay.innerHTML = `
+    <div style="
+      position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:99999;
+      background:linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:32px; box-sizing:border-box; color:#E2E8F0; text-align:center;
+    ">
+      <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="#F59E0B" stroke-width="2" style="margin-bottom:24px">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+      <h2 style="font-size:22px; font-weight:800; margin:0 0 12px; color:#F8FAFC">Location Access Required</h2>
+      <p style="font-size:15px; color:#94A3B8; max-width:320px; line-height:1.5; margin:0 0 24px">
+        BuzyHub Field requires your live location during office hours to track field operations.
+        This app cannot function without location access.
+      </p>
+      <button id="btn-grant-location" style="
+        background:linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        color:white; border:none; border-radius:12px; padding:16px 48px;
+        font-size:16px; font-weight:700; cursor:pointer; width:100%; max-width:300px;
+        box-shadow: 0 4px 14px rgba(59,130,246,0.4);
+      ">Allow Location Access</button>
+      <p style="font-size:12px; color:#64748B; margin-top:16px; max-width:280px; line-height:1.4">
+        If you previously denied permission, go to<br>
+        <strong style="color:#94A3B8">Settings → Apps → BuzyHub Field → Permissions → Location → Allow all the time</strong>
+      </p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('btn-grant-location').addEventListener('click', requestLocationPermission);
+}
+
+function removeLocationBlocker() {
+  const blocker = document.getElementById('location-blocker');
+  if (blocker) blocker.remove();
+}
+
+async function requestLocationPermission() {
+  try {
+    // This triggers the native Android permission dialog via the WebView
+    const pos = await getCurrentPosition(true);
+    locationGranted = true;
+    removeLocationBlocker();
+    toast('Location access granted!', 'success');
+    return true;
+  } catch (err) {
+    console.log('Location permission denied or failed:', err.message);
+    locationGranted = false;
+    // Keep the blocker visible — show error feedback
+    const btn = document.getElementById('btn-grant-location');
+    if (btn) {
+      btn.textContent = 'Permission Denied — Tap to Try Again';
+      btn.style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)';
+      btn.style.boxShadow = '0 4px 14px rgba(239,68,68,0.4)';
+      setTimeout(() => {
+        btn.textContent = 'Allow Location Access';
+        btn.style.background = 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)';
+        btn.style.boxShadow = '0 4px 14px rgba(59,130,246,0.4)';
+      }, 3000);
+    }
+    return false;
+  }
+}
+
+async function checkLocationPermission() {
+  try {
+    // Use Permissions API first (faster, no GPS needed)
+    if (navigator.permissions) {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      if (status.state === 'granted') {
+        locationGranted = true;
+        removeLocationBlocker();
+        return true;
+      } else if (status.state === 'denied') {
+        locationGranted = false;
+        createLocationBlocker();
+        return false;
+      }
+    }
+    // Fallback: actually try to get position
+    await getCurrentPosition(false);
+    locationGranted = true;
+    removeLocationBlocker();
+    return true;
+  } catch {
+    locationGranted = false;
+    createLocationBlocker();
+    return false;
+  }
+}
+
+function startLocationWatchdog() {
+  if (locationWatchdogTimer) clearInterval(locationWatchdogTimer);
+  locationWatchdogTimer = setInterval(async () => {
+    await checkLocationPermission();
+  }, LOCATION_CHECK_MS);
+}
+
+async function enforceLocationOnBoot() {
+  // Immediately check and request location permission
+  const granted = await checkLocationPermission();
+  if (!granted) {
+    createLocationBlocker();
+  }
+  // Start watchdog regardless — continuously monitors
+  startLocationWatchdog();
+  return granted;
 }
 
 // ─── Photo upload helper ───────────────────────────────────────────────────────
@@ -671,7 +790,7 @@ async function loadMyVisits() {
   }
 
   if (activeVisits.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>Older visits are no longer visible here.</p></div>';
+    list.innerHTML = `<div class="empty-state"><p>All ${count} logged visits are older than 8 hours. Details are hidden, but your total count is preserved.</p></div>`;
     return;
   }
 
@@ -702,7 +821,7 @@ function openVisitModal(visitId) {
   const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
   if (new Date(v.created_at) < eightHoursAgo) {
     // Show a toast message if they somehow try to open it
-    showToast('Details are no longer available for older visits.', 'error');
+    toast('Details are no longer available for older visits.', 'error');
     return;
   }
 
@@ -734,6 +853,49 @@ function openVisitModal(visitId) {
   modal.classList.add('open');
 
   $('#btn-edit-visit').addEventListener('click', () => openEditForm(v));
+}
+
+function openShopVisitModal(shopVisitId) {
+  const v = cachedShopVisits.find(x => x.id === shopVisitId);
+  if (!v) return;
+
+  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
+  if (new Date(v.created_at) < eightHoursAgo) {
+    toast('Details are no longer available for older visits.', 'error');
+    return;
+  }
+
+  const modal = $('#visit-modal');
+  const body = $('#modal-body');
+  $('#modal-title').textContent = 'Shop Visit Details';
+  const time = new Date(v.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  let photosHtml = '';
+  if (v.selfie_url || v.shop_photo_url) {
+    photosHtml = `<div class="modal-photos">
+      ${v.selfie_url ? `<img src="${v.selfie_url}" alt="Selfie" />` : ''}
+      ${v.shop_photo_url ? `<img src="${v.shop_photo_url}" alt="Shop Photo" />` : ''}
+    </div>`;
+  }
+
+  const interestLabel = v.interest_status === 'interested' ? 'Interested' : v.interest_status === 'not_interested' ? 'Not Interested' : v.interest_status === 'follow_up' ? 'Follow Up' : 'Not Contacted';
+
+  body.innerHTML = `
+    <div class="modal-row"><span class="modal-row-label">Owner/Person</span><span class="modal-row-value">${esc(v.person_name)}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Mobile</span><span class="modal-row-value">${esc(v.mobile || '-')}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Shop Name</span><span class="modal-row-value">${esc(v.shop_name || '-')}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Interest</span><span class="modal-row-value">${interestLabel}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Next Call</span><span class="modal-row-value">${v.next_call_date || '-'}</span></div>
+    <div class="modal-row"><span class="modal-row-label">Logged</span><span class="modal-row-value">${time}</span></div>
+    ${v.google_map_link ? `<div class="modal-row"><span class="modal-row-label">Location</span><span class="modal-row-value"><a href="${v.google_map_link}" target="_blank" style="color:#38BDF8">View on Map</a></span></div>` : ''}
+    ${photosHtml}
+    <div class="modal-actions">
+      <button class="btn btn-outline-danger btn-sm" id="btn-close-shop-detail">Close</button>
+    </div>
+  `;
+  modal.classList.add('open');
+
+  $('#btn-close-shop-detail').addEventListener('click', closeModal);
 }
 
 function closeModal() { $('#visit-modal').classList.remove('open'); }
@@ -902,7 +1064,7 @@ async function loadShopVisits() {
   }
 
   if (activeShopVisits.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>Older visits are no longer visible here.</p></div>';
+    list.innerHTML = `<div class="empty-state"><p>All ${count} logged shop visits are older than 8 hours. Details are hidden, but your total count is preserved.</p></div>`;
     return;
   }
 
@@ -1171,7 +1333,13 @@ function bindEvents() {
   // Visit card tap → open detail modal (delegated)
   document.addEventListener('click', (e) => {
     const card = e.target.closest('.visit-card');
-    if (card && card.dataset.visitId) openVisitModal(card.dataset.visitId);
+    if (card) {
+      if (card.dataset.visitId) {
+        openVisitModal(card.dataset.visitId);
+      } else if (card.dataset.shopVisitId) {
+        openShopVisitModal(card.dataset.shopVisitId);
+      }
+    }
   });
 
   // Close modal
@@ -1184,6 +1352,10 @@ function bindEvents() {
 // ─── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   bindEvents();
+
+  // FIRST: Enforce location permission immediately before anything else
+  await enforceLocationOnBoot();
+
   await initAuth();
   hide('#splash');
 });
