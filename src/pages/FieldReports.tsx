@@ -134,6 +134,39 @@ export default function FieldReports() {
     URL.revokeObjectURL(url);
   };
 
+  const [groupBy, setGroupBy] = useState<"none" | "date" | "employee">("none");
+
+  const groupedByDate = useMemo(() => {
+    if (groupBy !== "date") return null;
+    const groups: Record<string, Record<string, any[]>> = {};
+    for (const v of filteredVisits) {
+      const isoDate = v.created_at.slice(0, 10);
+      if (!groups[isoDate]) groups[isoDate] = {};
+      const empId = v.employee_id;
+      if (!groups[isoDate][empId]) groups[isoDate][empId] = [];
+      groups[isoDate][empId].push(v);
+    }
+    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [filteredVisits, groupBy]);
+
+  const groupedByEmployee = useMemo(() => {
+    if (groupBy !== "employee") return null;
+    const groups: Record<string, Record<string, any[]>> = {};
+    for (const v of filteredVisits) {
+      const empId = v.employee_id;
+      if (!groups[empId]) groups[empId] = {};
+      const isoDate = v.created_at.slice(0, 10);
+      if (!groups[empId][isoDate]) groups[empId][isoDate] = [];
+      groups[empId][isoDate].push(v);
+    }
+    return Object.entries(groups).sort((a, b) => {
+      const nameA = empName(a[0]);
+      const nameB = empName(b[0]);
+      return nameA.localeCompare(nameB);
+    });
+  }, [filteredVisits, groupBy, employees]);
+
+  // Visit details table
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -250,67 +283,257 @@ export default function FieldReports() {
 
       {/* Visit details table */}
       <Card className="p-4">
-        <h3 className="text-sm font-semibold mb-3">Visit Details ({filteredVisits.length})</h3>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                {selectedEmp === "all" && <TableHead>Employee</TableHead>}
-                <TableHead>Society</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead className="text-center">Flats</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredVisits.slice(0, 100).map((v: any) => {
-                const st = v.verification_status || "pending";
-                return (
-                  <TableRow key={v.id}>
-                    <TableCell className="whitespace-nowrap text-xs">
-                      {new Date(v.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </TableCell>
-                    {selectedEmp === "all" && (
-                      <TableCell className="text-xs font-medium">{empName(v.employee_id)}</TableCell>
-                    )}
-                    <TableCell className="font-medium">{v.name}</TableCell>
-                    <TableCell className="text-xs max-w-[180px] truncate">{v.address || "-"}</TableCell>
-                    <TableCell className="text-xs">{v.contact_person || "-"}</TableCell>
-                    <TableCell className="text-xs">{v.contact_phone || "-"}</TableCell>
-                    <TableCell className="text-center">{v.number_of_flats || "-"}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant="outline"
-                        className={
-                          st === "verified_real" ? "bg-green-50 text-green-700 border-green-200" :
-                          st === "verified_fake" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                          "bg-amber-50 text-amber-700 border-amber-200"
-                        }
-                      >
-                        {st === "verified_real" ? "Real" : st === "verified_fake" ? "Fake" : "Pending"}
-                      </Badge>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-4 border-b pb-3">
+          <h3 className="text-sm font-semibold">Visit Details ({filteredVisits.length})</h3>
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-muted-foreground font-medium">Group by:</span>
+            <div className="bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg flex gap-1">
+              <Button
+                variant={groupBy === "none" ? "secondary" : "ghost"}
+                className={`h-7 px-2.5 text-[11px] font-semibold ${groupBy === 'none' ? 'bg-white shadow-sm' : ''}`}
+                onClick={() => setGroupBy("none")}
+              >
+                None
+              </Button>
+              <Button
+                variant={groupBy === "date" ? "secondary" : "ghost"}
+                className={`h-7 px-2.5 text-[11px] font-semibold ${groupBy === 'date' ? 'bg-white shadow-sm' : ''}`}
+                onClick={() => setGroupBy("date")}
+              >
+                Date
+              </Button>
+              <Button
+                variant={groupBy === "employee" ? "secondary" : "ghost"}
+                className={`h-7 px-2.5 text-[11px] font-semibold ${groupBy === 'employee' ? 'bg-white shadow-sm' : ''}`}
+                onClick={() => setGroupBy("employee")}
+              >
+                Employee
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {groupBy === "none" && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  {selectedEmp === "all" && <TableHead>Employee</TableHead>}
+                  <TableHead>Society</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead className="text-center">Flats</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredVisits.slice(0, 100).map((v: any) => {
+                  const st = v.verification_status || "pending";
+                  return (
+                    <TableRow key={v.id}>
+                      <TableCell className="whitespace-nowrap text-xs">
+                        {new Date(v.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </TableCell>
+                      {selectedEmp === "all" && (
+                        <TableCell className="text-xs font-medium">{empName(v.employee_id)}</TableCell>
+                      )}
+                      <TableCell className="font-medium">{v.name}</TableCell>
+                      <TableCell className="text-xs max-w-[180px] truncate">{v.address || "-"}</TableCell>
+                      <TableCell className="text-xs">{v.contact_person || "-"}</TableCell>
+                      <TableCell className="text-xs">{v.contact_phone || "-"}</TableCell>
+                      <TableCell className="text-center">{v.number_of_flats || "-"}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge
+                          variant="outline"
+                          className={
+                            st === "verified_real" ? "bg-green-50 text-green-700 border-green-200" :
+                            st === "verified_fake" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                            "bg-amber-50 text-amber-700 border-amber-200"
+                          }
+                        >
+                          {st === "verified_real" ? "Real" : st === "verified_fake" ? "Fake" : "Pending"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {filteredVisits.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      No visits found for this period
                     </TableCell>
                   </TableRow>
-                );
-              })}
-              {filteredVisits.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    No visits found for this period
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          {filteredVisits.length > 100 && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Showing 100 of {filteredVisits.length} visits. Export CSV for full data.
-            </p>
-          )}
-        </div>
+                )}
+              </TableBody>
+            </Table>
+            {filteredVisits.length > 100 && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Showing 100 of {filteredVisits.length} visits. Export CSV for full data.
+              </p>
+            )}
+          </div>
+        )}
+
+        {groupBy === "date" && (
+          <div className="space-y-6">
+            {groupedByDate?.map(([isoDate, empsObj]) => {
+              const formattedDate = new Date(isoDate + "T00:00:00").toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              });
+              const dayTotal = Object.values(empsObj).reduce((sum, list) => sum + list.length, 0);
+
+              return (
+                <div key={isoDate} className="border border-border/60 rounded-lg overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
+                  <div className="bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center">
+                    <div className="font-bold text-xs flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                      {formattedDate}
+                    </div>
+                    <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-950 font-bold">{dayTotal} visits</Badge>
+                  </div>
+
+                  <div className="p-3 space-y-4">
+                    {Object.entries(empsObj).map(([empId, list]) => (
+                      <div key={empId} className="space-y-1.5">
+                        <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1">
+                          <User className="w-3.5 h-3.5 text-slate-500" />
+                          {empName(empId)} <span className="font-normal text-muted-foreground/80">({list.length} visits)</span>
+                        </div>
+                        <div className="overflow-x-auto border border-border/40 rounded-md bg-card">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="h-8 py-1.5 text-[11px]">Society</TableHead>
+                                <TableHead className="h-8 py-1.5 text-[11px]">Address</TableHead>
+                                <TableHead className="h-8 py-1.5 text-[11px]">Contact</TableHead>
+                                <TableHead className="h-8 py-1.5 text-[11px]">Phone</TableHead>
+                                <TableHead className="h-8 py-1.5 text-[11px] text-center">Flats</TableHead>
+                                <TableHead className="h-8 py-1.5 text-[11px] text-center">Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {list.map((v: any) => {
+                                const st = v.verification_status || "pending";
+                                return (
+                                  <TableRow key={v.id}>
+                                    <TableCell className="font-medium text-xs py-2">{v.name}</TableCell>
+                                    <TableCell className="text-xs py-2 max-w-[200px] truncate">{v.address || "-"}</TableCell>
+                                    <TableCell className="text-xs py-2">{v.contact_person || "-"}</TableCell>
+                                    <TableCell className="text-xs py-2">{v.contact_phone || "-"}</TableCell>
+                                    <TableCell className="text-center text-xs py-2">{v.number_of_flats || "-"}</TableCell>
+                                    <TableCell className="text-center py-2">
+                                      <Badge
+                                        variant="outline"
+                                        className={
+                                          st === "verified_real" ? "bg-green-50 text-green-700 border-green-200 text-[10px] py-0 px-1.5" :
+                                          st === "verified_fake" ? "bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 px-1.5" :
+                                          "bg-amber-50 text-amber-700 border-amber-200 text-[10px] py-0 px-1.5"
+                                        }
+                                      >
+                                        {st === "verified_real" ? "Real" : st === "verified_fake" ? "Fake" : "Pending"}
+                                      </Badge>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {groupBy === "employee" && (
+          <div className="space-y-6">
+            {groupedByEmployee?.map(([empId, datesObj]) => {
+              const empTotal = Object.values(datesObj).reduce((sum, list) => sum + list.length, 0);
+
+              return (
+                <div key={empId} className="border border-border/60 rounded-lg overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
+                  <div className="bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center">
+                    <div className="font-bold text-xs flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-muted-foreground" />
+                      {empName(empId)}
+                    </div>
+                    <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-950 font-bold">{empTotal} visits</Badge>
+                  </div>
+
+                  <div className="p-3 space-y-4">
+                    {Object.entries(datesObj)
+                      .sort((a, b) => b[0].localeCompare(a[0]))
+                      .map(([isoDate, list]) => {
+                        const formattedDate = new Date(isoDate + "T00:00:00").toLocaleDateString("en-IN", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        });
+
+                        return (
+                          <div key={isoDate} className="space-y-1.5">
+                            <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 px-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {formattedDate} <span className="font-normal text-muted-foreground/80">({list.length} visits)</span>
+                            </div>
+                            <div className="overflow-x-auto border border-border/40 rounded-md bg-card">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="h-8 py-1.5 text-[11px]">Society</TableHead>
+                                    <TableHead className="h-8 py-1.5 text-[11px]">Address</TableHead>
+                                    <TableHead className="h-8 py-1.5 text-[11px]">Contact</TableHead>
+                                    <TableHead className="h-8 py-1.5 text-[11px]">Phone</TableHead>
+                                    <TableHead className="h-8 py-1.5 text-[11px] text-center">Flats</TableHead>
+                                    <TableHead className="h-8 py-1.5 text-[11px] text-center">Status</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {list.map((v: any) => {
+                                    const st = v.verification_status || "pending";
+                                    return (
+                                      <TableRow key={v.id}>
+                                        <TableCell className="font-medium text-xs py-2">{v.name}</TableCell>
+                                        <TableCell className="text-xs py-2 max-w-[200px] truncate">{v.address || "-"}</TableCell>
+                                        <TableCell className="text-xs py-2">{v.contact_person || "-"}</TableCell>
+                                        <TableCell className="text-xs py-2">{v.contact_phone || "-"}</TableCell>
+                                        <TableCell className="text-center text-xs py-2">{v.number_of_flats || "-"}</TableCell>
+                                        <TableCell className="text-center py-2">
+                                          <Badge
+                                            variant="outline"
+                                            className={
+                                              st === "verified_real" ? "bg-green-50 text-green-700 border-green-200 text-[10px] py-0 px-1.5" :
+                                              st === "verified_fake" ? "bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 px-1.5" :
+                                              "bg-amber-50 text-amber-700 border-amber-200 text-[10px] py-0 px-1.5"
+                                            }
+                                          >
+                                            {st === "verified_real" ? "Real" : st === "verified_fake" ? "Fake" : "Pending"}
+                                          </Badge>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );
