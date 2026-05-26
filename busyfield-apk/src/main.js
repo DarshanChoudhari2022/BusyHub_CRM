@@ -4,7 +4,9 @@ import { supabase } from './supabase.js';
 const HEARTBEAT_MS = 2 * 60 * 1000;   // push location every 2 min
 const MIN_ACCURACY_M = 200;            // reject visit if GPS fuzzier than this
 const STATS_INTERVAL = 30_000;         // refresh dashboard stats every 30s
-const LOCATION_CHECK_MS = 30_000;      // check location permission every 30s
+const LOCATION_CHECK_MS = 60_000;      // check location permission every 60s (reduced frequency)
+const MAX_PHOTO_SIZE = 800;            // max dimension for photo compression
+const PHOTO_QUALITY = 0.6;            // JPEG quality for compression
 
 // ─── App state ─────────────────────────────────────────────────────────────────
 let currentUser = null;
@@ -27,6 +29,7 @@ let shopBuildingFile = null;
 let shopInterest = 'interested';
 let cachedShopVisits = [];
 let locationGranted = false;
+let shiftTransitioning = false; // prevent double-tap glitch on shift buttons
 
 // ─── DOM helpers ───────────────────────────────────────────────────────────────
 const $ = (s) => document.querySelector(s);
@@ -77,6 +80,56 @@ function getCurrentPosition(highAccuracy = true) {
       timeout: 15000,
       maximumAge: 10000,
     });
+  });
+}
+
+// ─── Photo Compression Helper ──────────────────────────────────────────────────
+function compressPhoto(file) {
+  return new Promise((resolve) => {
+    // If file is small enough, skip compression
+    if (file.size < 200 * 1024) { // less than 200KB
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+
+        // Scale down if needed
+        if (w > MAX_PHOTO_SIZE || h > MAX_PHOTO_SIZE) {
+          if (w > h) {
+            h = Math.round(h * MAX_PHOTO_SIZE / w);
+            w = MAX_PHOTO_SIZE;
+          } else {
+            w = Math.round(w * MAX_PHOTO_SIZE / h);
+            h = MAX_PHOTO_SIZE;
+          }
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressed = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
+            resolve(compressed);
+          } else {
+            resolve(file); // fallback to original
+          }
+        }, 'image/jpeg', PHOTO_QUALITY);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
   });
 }
 
@@ -131,6 +184,7 @@ async function requestLocationPermission() {
     locationGranted = true;
     removeLocationBlocker();
     toast('Location access granted!', 'success');
+    updateStatusList();
     return true;
   } catch (err) {
     console.log('Location permission denied or failed:', err.message);
@@ -165,11 +219,15 @@ async function checkLocationPermission() {
         createLocationBlocker();
         return false;
       }
+      // 'prompt' state — don't show blocker, don't trigger prompt automatically
+      // Only show blocker if we haven't established permission yet
     }
-    // Fallback: actually try to get position
-    await getCurrentPosition(false);
-    locationGranted = true;
-    removeLocationBlocker();
+    // Fallback: actually try to get position (only if we haven't confirmed permission yet)
+    if (!locationGranted) {
+      await getCurrentPosition(false);
+      locationGranted = true;
+      removeLocationBlocker();
+    }
     return true;
   } catch {
     locationGranted = false;
@@ -181,7 +239,24 @@ async function checkLocationPermission() {
 function startLocationWatchdog() {
   if (locationWatchdogTimer) clearInterval(locationWatchdogTimer);
   locationWatchdogTimer = setInterval(async () => {
-    await checkLocationPermission();
+    // Only re-check if permission was previously denied
+    // If already granted, just verify it hasn't been revoked
+    if (locationGranted) {
+      // Quick non-intrusive check using Permissions API only
+      try {
+        if (navigator.permissions) {
+          const status = await navigator.permissions.query({ name: 'geolocation' });
+          if (status.state === 'denied') {
+            locationGranted = false;
+            createLocationBlocker();
+          }
+          // If still 'granted', do nothing — no popup, no GPS call
+        }
+      } catch { /* ignore */ }
+    } else {
+      // Permission not granted — re-check
+      await checkLocationPermission();
+    }
   }, LOCATION_CHECK_MS);
 }
 
@@ -199,11 +274,13 @@ async function enforceLocationOnBoot() {
 // ─── Photo upload helper ───────────────────────────────────────────────────────
 async function uploadPhoto(file, userId, kind) {
   try {
+    // Compress photo before upload for speed
+    const compressed = await compressPhoto(file);
     const path = `${userId}/${Date.now()}-${kind}.jpg`;
-    const arrayBuffer = await file.arrayBuffer();
+    const arrayBuffer = await compressed.arrayBuffer();
     const { error } = await supabase.storage
       .from('field-evidence')
-      .upload(path, arrayBuffer, { contentType: file.type || 'image/jpeg', upsert: false });
+      .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
     if (error) { console.log('upload error', error.message); return null; }
     const { data } = supabase.storage.from('field-evidence').getPublicUrl(path);
     return data?.publicUrl || null;
@@ -317,9 +394,11 @@ function updateTrackingUI() {
     desc.textContent = `Your location is being shared. Last sync: ${formatRelative(lastSyncTs)}.`;
     startBtn.style.display = 'none';
     stopBtn.style.display = '';
+    stopBtn.disabled = shiftTransitioning;
   } else {
     desc.textContent = 'Start your shift to share your location with your manager.';
     startBtn.style.display = '';
+    startBtn.disabled = shiftTransitioning;
     stopBtn.style.display = 'none';
   }
 }
@@ -335,16 +414,16 @@ function formatRelative(ts) {
 async function updateStatusList() {
   const list = $('#status-list');
   let gpsOk = false;
-  let permOk = false;
+
+  // Use locationGranted flag which is always kept in sync — no extra GPS call
+  const permOk = locationGranted;
 
   try {
-    const state = await navigator.permissions.query({ name: 'geolocation' });
-    permOk = state.state === 'granted';
-  } catch { /* some browsers don't support this */ }
-
-  try {
-    await getCurrentPosition(false);
-    gpsOk = true;
+    // Only test GPS if permission is granted
+    if (permOk) {
+      await getCurrentPosition(false);
+      gpsOk = true;
+    }
   } catch { gpsOk = false; }
 
   const rows = [
@@ -380,7 +459,7 @@ async function reconcileShift() {
 }
 
 function handleStartShift() {
-  if (!currentUser) return;
+  if (!currentUser || shiftTransitioning) return;
   // Reset modal state
   shiftStartSelfie = null;
   noWorkFlag = false;
@@ -393,7 +472,7 @@ function handleStartShift() {
 }
 
 async function confirmStartShift() {
-  if (!currentUser) return;
+  if (!currentUser || shiftTransitioning) return;
   const errEl = $('#shift-start-error');
   errEl.textContent = '';
 
@@ -410,6 +489,7 @@ async function confirmStartShift() {
 
   const btn = $('#btn-confirm-shift-start');
   btn.disabled = true;
+  shiftTransitioning = true;
   btn.textContent = 'Getting location...';
 
   // Request location
@@ -418,6 +498,7 @@ async function confirmStartShift() {
   } catch (e) {
     errEl.textContent = 'Please allow location access to start your shift.';
     btn.disabled = false;
+    shiftTransitioning = false;
     btn.textContent = 'Start Shift';
     return;
   }
@@ -447,6 +528,7 @@ async function confirmStartShift() {
     .single();
 
   btn.disabled = false;
+  shiftTransitioning = false;
   btn.textContent = 'Start Shift';
 
   if (error) {
@@ -468,7 +550,7 @@ async function confirmStartShift() {
 }
 
 async function handleStopShift() {
-  if (!currentUser || !activeShiftId) return;
+  if (!currentUser || !activeShiftId || shiftTransitioning) return;
 
   // Check shift duration for early-end warning
   const { data: shiftRow } = await supabase
@@ -505,7 +587,7 @@ async function handleStopShift() {
 }
 
 async function confirmEndShift() {
-  if (!currentUser || !activeShiftId) return;
+  if (!currentUser || !activeShiftId || shiftTransitioning) return;
   const errEl = $('#shift-end-error');
   errEl.textContent = '';
 
@@ -522,6 +604,7 @@ async function confirmEndShift() {
 
   const btn = $('#btn-confirm-shift-end');
   btn.disabled = true;
+  shiftTransitioning = true;
   btn.textContent = 'Uploading selfie...';
 
   const endSelfieUrl = await uploadPhoto(shiftEndSelfie, currentUser.id, 'shift-end');
@@ -570,6 +653,7 @@ async function confirmEndShift() {
   if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
   isTracking = false;
   activeShiftId = null;
+  shiftTransitioning = false;
   updateTrackingUI();
 
   btn.disabled = false;
@@ -654,6 +738,8 @@ async function pushLocation() {
       }),
     ]);
     lastSyncTs = Date.now();
+    // Confirm permission is working
+    locationGranted = true;
   } catch (e) {
     console.log('pushLocation failed:', e);
   }
@@ -765,10 +851,9 @@ async function loadMyVisits() {
 
   const since = getDateRange(visitsRange);
   const { data, error } = await supabase.from('society_data')
-    .select('id, name, address, contact_person, contact_phone, number_of_flats, status, verification_status, selfie_url, building_photo_url, created_at')
+    .select('id', { count: 'exact', head: true })
     .eq('employee_id', currentUser.id)
-    .gte('created_at', since)
-    .order('created_at', { ascending: false });
+    .gte('created_at', since);
 
   if (error) {
     subtitle.textContent = 'Failed to load';
@@ -776,17 +861,40 @@ async function loadMyVisits() {
     return;
   }
 
-  cachedVisits = data || [];
-  const count = cachedVisits.length;
+  const count = data?.length || 0;
   const rangeLabel = visitsRange === 'today' ? 'today' : visitsRange === 'week' ? 'this week' : 'this month';
   subtitle.textContent = `${count} societ${count === 1 ? 'y' : 'ies'} visited ${rangeLabel}`;
 
   if (count === 0) {
-    list.innerHTML = '<div class="empty-state"><p>No visits logged yet.</p></div>';
+    list.innerHTML = `
+      <div class="visits-count-card">
+        <div class="visits-count-icon">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#64748B" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <div class="visits-count-number">0</div>
+        <div class="visits-count-label">No visits logged ${rangeLabel}</div>
+        <div class="visits-count-hint">Start logging visits from the Log tab</div>
+      </div>`;
     return;
   }
 
-  list.innerHTML = `<div class="empty-state"><p>Visit details are hidden for security. Your total count of ${count} is preserved.</p></div>`;
+  // Show count-only card with a clean UI
+  list.innerHTML = `
+    <div class="visits-count-card">
+      <div class="visits-count-icon">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#22C55E" stroke-width="1.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="visits-count-number">${count}</div>
+      <div class="visits-count-label">Societ${count === 1 ? 'y' : 'ies'} Visited</div>
+      <div class="visits-count-period">${rangeLabel.charAt(0).toUpperCase() + rangeLabel.slice(1)}</div>
+      <div class="visits-count-hint">Your total count is preserved securely</div>
+    </div>`;
 }
 
 // ─── Visit Detail Modal ──────────────────────────────────────────────────────────
@@ -941,11 +1049,10 @@ async function loadShopVisits() {
   list.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
 
   const since = getDateRange(visitsRange);
-  const { data, error } = await supabase.from('shop_visits')
-    .select('id, person_name, mobile, shop_name, interest_status, next_call_date, selfie_url, shop_photo_url, created_at, google_map_link')
+  const { count, error } = await supabase.from('shop_visits')
+    .select('id', { count: 'exact', head: true })
     .eq('employee_id', currentUser.id)
-    .gte('created_at', since)
-    .order('created_at', { ascending: false });
+    .gte('created_at', since);
 
   if (error) {
     subtitle.textContent = 'Failed to load';
@@ -953,17 +1060,39 @@ async function loadShopVisits() {
     return;
   }
 
-  cachedShopVisits = data || [];
-  const count = cachedShopVisits.length;
+  const totalCount = count || 0;
   const rangeLabel = visitsRange === 'today' ? 'today' : visitsRange === 'week' ? 'this week' : 'this month';
-  subtitle.textContent = `${count} shop${count === 1 ? '' : 's'} visited ${rangeLabel}`;
+  subtitle.textContent = `${totalCount} shop${totalCount === 1 ? '' : 's'} visited ${rangeLabel}`;
 
-  if (count === 0) {
-    list.innerHTML = '<div class="empty-state"><p>No shop visits logged yet.</p></div>';
+  if (totalCount === 0) {
+    list.innerHTML = `
+      <div class="visits-count-card">
+        <div class="visits-count-icon">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#64748B" stroke-width="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <div class="visits-count-number">0</div>
+        <div class="visits-count-label">No shop visits logged ${rangeLabel}</div>
+        <div class="visits-count-hint">Start logging visits from the Shop tab</div>
+      </div>`;
     return;
   }
 
-  list.innerHTML = `<div class="empty-state"><p>Shop visit details are hidden for security. Your total count of ${count} is preserved.</p></div>`;
+  list.innerHTML = `
+    <div class="visits-count-card">
+      <div class="visits-count-icon">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#22C55E" stroke-width="1.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="visits-count-number">${totalCount}</div>
+      <div class="visits-count-label">Shop${totalCount === 1 ? '' : 's'} Visited</div>
+      <div class="visits-count-period">${rangeLabel.charAt(0).toUpperCase() + rangeLabel.slice(1)}</div>
+      <div class="visits-count-hint">Your total count is preserved securely</div>
+    </div>`;
 }
 
 // ─── Log Visit ─────────────────────────────────────────────────────────────────
@@ -1107,6 +1236,7 @@ function handlePhotoInput(e) {
   const kind = input.dataset.kind;
   const box = input.closest('.photo-box');
 
+  // Store the raw file — compression happens on upload
   if (kind === 'selfie') selfieFile = file;
   else if (kind === 'building') buildingFile = file;
   else if (kind === 'shift-start') shiftStartSelfie = file;
@@ -1114,20 +1244,48 @@ function handlePhotoInput(e) {
   else if (kind === 'shop-selfie') shopSelfieFile = file;
   else if (kind === 'shop-building') shopBuildingFile = file;
 
-  // Preview
+  // Show immediate low-res preview via canvas for speed
   const existing = box.querySelector('img');
   if (existing) existing.remove();
   const existingCheck = box.querySelector('.photo-check');
   if (existingCheck) existingCheck.remove();
 
-  const img = document.createElement('img');
-  img.src = URL.createObjectURL(file);
-  box.appendChild(img);
+  // Create fast thumbnail preview using canvas
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Small thumbnail for preview — much faster than full-size blob URL
+      const maxPreview = 200;
+      let w = tempImg.width;
+      let h = tempImg.height;
+      if (w > maxPreview || h > maxPreview) {
+        if (w > h) {
+          h = Math.round(h * maxPreview / w);
+          w = maxPreview;
+        } else {
+          w = Math.round(w * maxPreview / h);
+          h = maxPreview;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(tempImg, 0, 0, w, h);
 
-  const check = document.createElement('div');
-  check.className = 'photo-check';
-  check.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="#22C55E"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
-  box.appendChild(check);
+      const previewImg = document.createElement('img');
+      previewImg.src = canvas.toDataURL('image/jpeg', 0.5);
+      box.appendChild(previewImg);
+
+      const check = document.createElement('div');
+      check.className = 'photo-check';
+      check.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="#22C55E"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+      box.appendChild(check);
+    };
+    tempImg.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 // ─── Wire up event listeners ───────────────────────────────────────────────────
