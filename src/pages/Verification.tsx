@@ -224,29 +224,40 @@ const Verification = () => {
         let endIso = "";
         const now = new Date();
 
+        // Helper to format date in local YYYY-MM-DD
+        const getLocalDateString = (d: Date) => {
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        };
+
+        const todayStr = getLocalDateString(now);
+
         if (exportDuration === "today") {
-          const today = now.toISOString().slice(0, 10);
-          startIso = `${today}T00:00:00.000Z`;
-          endIso = `${today}T23:59:59.999Z`;
-          dateLabel = today;
+          startIso = `${todayStr}T00:00:00.000+05:30`;
+          endIso = `${todayStr}T23:59:59.999+05:30`;
+          dateLabel = todayStr;
         } else if (exportDuration === "yesterday") {
           const yesterday = new Date(now);
           yesterday.setDate(now.getDate() - 1);
-          const yestStr = yesterday.toISOString().slice(0, 10);
-          startIso = `${yestStr}T00:00:00.000Z`;
-          endIso = `${yestStr}T23:59:59.999Z`;
+          const yestStr = getLocalDateString(yesterday);
+          startIso = `${yestStr}T00:00:00.000+05:30`;
+          endIso = `${yestStr}T23:59:59.999+05:30`;
           dateLabel = yestStr;
         } else if (exportDuration === "7days") {
           const sevenDaysAgo = new Date(now);
           sevenDaysAgo.setDate(now.getDate() - 7);
-          startIso = `${sevenDaysAgo.toISOString().slice(0, 10)}T00:00:00.000Z`;
-          endIso = `${now.toISOString().slice(0, 10)}T23:59:59.999Z`;
+          const startStr = getLocalDateString(sevenDaysAgo);
+          startIso = `${startStr}T00:00:00.000+05:30`;
+          endIso = `${todayStr}T23:59:59.999+05:30`;
           dateLabel = "Last_7_Days";
         } else if (exportDuration === "30days") {
           const thirtyDaysAgo = new Date(now);
           thirtyDaysAgo.setDate(now.getDate() - 30);
-          startIso = `${thirtyDaysAgo.toISOString().slice(0, 10)}T00:00:00.000Z`;
-          endIso = `${now.toISOString().slice(0, 10)}T23:59:59.999Z`;
+          const startStr = getLocalDateString(thirtyDaysAgo);
+          startIso = `${startStr}T00:00:00.000+05:30`;
+          endIso = `${todayStr}T23:59:59.999+05:30`;
           dateLabel = "Last_30_Days";
         } else if (exportDuration === "custom") {
           if (!exportStartDate || !exportEndDate) {
@@ -254,8 +265,8 @@ const Verification = () => {
             setExporting(false);
             return;
           }
-          startIso = `${exportStartDate}T00:00:00.000Z`;
-          endIso = `${exportEndDate}T23:59:59.999Z`;
+          startIso = `${exportStartDate}T00:00:00.000+05:30`;
+          endIso = `${exportEndDate}T23:59:59.999+05:30`;
           dateLabel = `${exportStartDate}_to_${exportEndDate}`;
         }
 

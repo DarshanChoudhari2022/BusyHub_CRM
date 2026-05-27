@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useSupabaseTable } from "@/hooks/useSupabase";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Download, MapPin, Phone, Building, Calendar, User, TrendingUp, ShieldCheck, ShieldX, Clock } from "lucide-react";
+import { Download, MapPin, Phone, Building, Calendar, User, TrendingUp, ShieldCheck, ShieldX, Clock, ChevronDown, ChevronRight } from "lucide-react";
 
 export default function FieldReports() {
   const [selectedEmp, setSelectedEmp] = useState<string>("all");
@@ -135,6 +135,11 @@ export default function FieldReports() {
   };
 
   const [groupBy, setGroupBy] = useState<"none" | "date" | "employee">("none");
+  const [expandedEmps, setExpandedEmps] = useState<Record<string, boolean>>({});
+
+  const toggleEmpExpand = (empId: string) => {
+    setExpandedEmps(prev => ({ ...prev, [empId]: !prev[empId] }));
+  };
 
   const groupedByDate = useMemo(() => {
     if (groupBy !== "date") return null;
@@ -291,18 +296,93 @@ export default function FieldReports() {
               </TableHeader>
               <TableBody>
                 {perEmployee.map((e, i) => (
-                  <TableRow 
-                    key={i} 
-                    className="cursor-pointer hover:bg-slate-50 transition-colors"
-                    onClick={() => setSelectedEmp(e.id)}
-                  >
-                    <TableCell className="font-medium text-primary hover:underline">{e.name}</TableCell>
-                    <TableCell className="text-center font-bold">{e.visits}</TableCell>
-                    <TableCell className="text-center text-green-600">{e.real}</TableCell>
-                    <TableCell className="text-center text-blue-600">{e.fake}</TableCell>
-                    <TableCell className="text-center text-amber-600">{e.pending}</TableCell>
-                    <TableCell className="text-center">{Math.round(e.hours * 10) / 10}h</TableCell>
-                  </TableRow>
+                  <Fragment key={e.id}>
+                    <TableRow 
+                      className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => toggleEmpExpand(e.id)}
+                    >
+                      <TableCell className="font-medium text-primary hover:underline flex items-center gap-1.5 py-3">
+                        {expandedEmps[e.id] ? (
+                          <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                        )}
+                        {e.name}
+                      </TableCell>
+                      <TableCell className="text-center font-bold">{e.visits}</TableCell>
+                      <TableCell className="text-center text-green-600">{e.real}</TableCell>
+                      <TableCell className="text-center text-blue-600">{e.fake}</TableCell>
+                      <TableCell className="text-center text-amber-600">{e.pending}</TableCell>
+                      <TableCell className="text-center">{Math.round(e.hours * 10) / 10}h</TableCell>
+                    </TableRow>
+
+                    {expandedEmps[e.id] && (
+                      <TableRow className="bg-slate-50/40 hover:bg-slate-50/40">
+                        <TableCell colSpan={6} className="p-3">
+                          <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm animate-fadeIn duration-200">
+                            <div className="bg-slate-50 px-4 py-2 border-b flex justify-between items-center">
+                              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                Leads / Visits Made by {e.name} ({e.visits})
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto">
+                              <Table>
+                                <TableHeader className="bg-slate-50/50">
+                                  <TableRow>
+                                    <TableHead className="h-8 py-1 text-[10px]">Date</TableHead>
+                                    <TableHead className="h-8 py-1 text-[10px]">Society/Organization</TableHead>
+                                    <TableHead className="h-8 py-1 text-[10px]">Address</TableHead>
+                                    <TableHead className="h-8 py-1 text-[10px]">Contact Person</TableHead>
+                                    <TableHead className="h-8 py-1 text-[10px]">Phone</TableHead>
+                                    <TableHead className="h-8 py-1 text-[10px] text-center">Flats</TableHead>
+                                    <TableHead className="h-8 py-1 text-[10px] text-center">Status</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {filteredVisits
+                                    .filter((v: any) => v.employee_id === e.id)
+                                    .map((v: any) => {
+                                      const st = v.verification_status || "pending";
+                                      return (
+                                        <TableRow key={v.id} className="hover:bg-slate-50/50">
+                                          <TableCell className="text-[11px] py-1.5 whitespace-nowrap">
+                                            {new Date(v.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                                          </TableCell>
+                                          <TableCell className="text-[11px] font-semibold py-1.5">{v.name}</TableCell>
+                                          <TableCell className="text-[11px] py-1.5 max-w-[150px] truncate">{v.address || "-"}</TableCell>
+                                          <TableCell className="text-[11px] py-1.5">{v.contact_person || "-"}</TableCell>
+                                          <TableCell className="text-[11px] py-1.5">{v.contact_phone || "-"}</TableCell>
+                                          <TableCell className="text-center text-[11px] py-1.5">{v.number_of_flats || "-"}</TableCell>
+                                          <TableCell className="text-center py-1.5">
+                                            <Badge
+                                              variant="outline"
+                                              className={
+                                                st === "verified_real" ? "bg-green-50 text-green-700 border-green-200 text-[10px] py-0 px-1.5" :
+                                                st === "verified_fake" ? "bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 px-1.5" :
+                                                "bg-amber-50 text-amber-700 border-amber-200 text-[10px] py-0 px-1.5"
+                                              }
+                                            >
+                                              {st === "verified_real" ? "Real" : st === "verified_fake" ? "Fake" : "Pending"}
+                                            </Badge>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  {filteredVisits.filter((v: any) => v.employee_id === e.id).length === 0 && (
+                                    <TableRow>
+                                      <TableCell colSpan={7} className="text-center text-muted-foreground py-4 text-xs">
+                                        No visits recorded
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>
