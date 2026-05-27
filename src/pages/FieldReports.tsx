@@ -79,9 +79,9 @@ export default function FieldReports() {
   }, [filteredVisits]);
 
   const perEmployee = useMemo(() => {
-    const map: Record<string, { name: string; visits: number; real: number; fake: number; pending: number; hours: number }> = {};
+    const map: Record<string, { id: string; name: string; visits: number; real: number; fake: number; pending: number; hours: number }> = {};
     for (const e of activeEmployees) {
-      map[e.id] = { name: e.name, visits: 0, real: 0, fake: 0, pending: 0, hours: 0 };
+      map[e.id] = { id: e.id, name: e.name, visits: 0, real: 0, fake: 0, pending: 0, hours: 0 };
     }
     for (const v of filteredVisits) {
       if (!map[v.employee_id]) continue;
@@ -180,21 +180,46 @@ export default function FieldReports() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {monthOptions.map(o => <SelectItem key={o.val} value={o.val}>{o.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={selectedEmp} onValueChange={setSelectedEmp}>
-          <SelectTrigger className="w-52"><SelectValue placeholder="All Employees" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Employees</SelectItem>
-            {activeEmployees.map((e: any) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex gap-3 flex-wrap items-center justify-between">
+        <div className="flex gap-3 flex-wrap">
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(o => <SelectItem key={o.val} value={o.val}>{o.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={selectedEmp} onValueChange={setSelectedEmp}>
+            <SelectTrigger className="w-52"><SelectValue placeholder="All Employees" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Employees</SelectItem>
+              {activeEmployees.map((e: any) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {selectedEmp !== "all" && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setSelectedEmp("all")}
+            className="text-xs font-semibold flex items-center gap-1 bg-white border-gray-200 hover:bg-gray-50 text-gray-700 h-9"
+          >
+            ← Back to All Employees
+          </Button>
+        )}
       </div>
+
+      {selectedEmp !== "all" && (
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3.5 flex items-center justify-between animate-fadeIn duration-200">
+          <div className="flex items-center gap-2 text-sm text-primary font-bold">
+            <User className="w-4 h-4 text-primary" />
+            Showing report for: {empName(selectedEmp)}
+          </div>
+          <span className="text-xs text-muted-foreground bg-white border px-2 py-0.5 rounded font-medium">
+            Tabular visits shown below
+          </span>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -251,7 +276,7 @@ export default function FieldReports() {
       {/* Per-employee table (only when "all") */}
       {selectedEmp === "all" && perEmployee.length > 0 && (
         <Card className="p-4">
-          <h3 className="text-sm font-semibold mb-3">Employee-wise Summary</h3>
+          <h3 className="text-sm font-semibold mb-3">Employee-wise Summary (Click employee to view tabular visits)</h3>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -266,8 +291,12 @@ export default function FieldReports() {
               </TableHeader>
               <TableBody>
                 {perEmployee.map((e, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">{e.name}</TableCell>
+                  <TableRow 
+                    key={i} 
+                    className="cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => setSelectedEmp(e.id)}
+                  >
+                    <TableCell className="font-medium text-primary hover:underline">{e.name}</TableCell>
                     <TableCell className="text-center font-bold">{e.visits}</TableCell>
                     <TableCell className="text-center text-green-600">{e.real}</TableCell>
                     <TableCell className="text-center text-blue-600">{e.fake}</TableCell>
