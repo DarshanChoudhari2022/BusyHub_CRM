@@ -138,7 +138,14 @@ const Leads = () => {
 
       // Date Filtering
       if (selectedDate !== "") {
-        const leadDate = l.dateReceived ? l.dateReceived.slice(0, 10) : "";
+        let leadDate = "";
+        if (l.dateReceived) {
+          const d = new Date(l.dateReceived);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          leadDate = `${yyyy}-${mm}-${dd}`;
+        }
         if (leadDate !== selectedDate) return false;
       }
 
