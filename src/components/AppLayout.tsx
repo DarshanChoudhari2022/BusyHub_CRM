@@ -7,7 +7,7 @@ export const AppLayout = () => {
   return (
     <SidebarProvider>
       {/* Outer: light gray page background like Crisp */}
-      <div className="min-h-screen flex w-full" style={{ background: "hsl(210 20% 96%)" }}>
+      <div className="h-screen flex w-full overflow-hidden" style={{ background: "hsl(210 20% 96%)" }}>
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
