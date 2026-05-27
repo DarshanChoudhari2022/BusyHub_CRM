@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ShieldCheck, ShieldAlert, ShieldX, PhoneCall, Search, MapPin, Clock,
-  Image as ImageIcon, AlertTriangle, User as UserIcon, Phone, Download, Calendar,
+  Image as ImageIcon, AlertTriangle, User as UserIcon, Phone, Download, Calendar, ChevronDown,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -61,6 +61,11 @@ const Verification = () => {
   const [saving, setSaving] = useState(false);
 
   const [groupBy, setGroupBy] = useState<"none" | "date" | "employee">("none");
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleCollapse = (key: string) => {
+    setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   /* ── Data fetching ────────────────────────────────────────── */
   const fetchRows = async () => {
@@ -501,30 +506,45 @@ const Verification = () => {
 
             return (
               <div key={isoDate} className="border border-border/60 rounded-lg overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
-                <div className="bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center">
+                <button
+                  type="button"
+                  className="w-full bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  onClick={() => toggleCollapse(`date-${isoDate}`)}
+                >
                   <div className="font-bold text-xs flex items-center gap-1.5">
+                    <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${collapsedGroups[`date-${isoDate}`] ? '-rotate-90' : ''}`} />
                     <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                     {formattedDate}
                   </div>
                   <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-950 font-bold">{dayTotal} visits</Badge>
-                </div>
+                </button>
 
-                <div className="p-4 space-y-6">
-                  {Object.entries(empsObj).map(([empId, list]) => {
-                    const empNameStr = list[0]?.employees?.name || "Unknown";
-                    return (
-                      <div key={empId} className="space-y-3">
-                        <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1 border-l-2 border-slate-400 pl-2">
-                          <UserIcon className="w-3.5 h-3.5" />
-                          {empNameStr} <span className="font-normal text-muted-foreground/80">({list.length} submissions)</span>
+                {!collapsedGroups[`date-${isoDate}`] && (
+                  <div className="p-4 space-y-6">
+                    {Object.entries(empsObj).map(([empId, list]) => {
+                      const empNameStr = list[0]?.employees?.name || "Unknown";
+                      const subKey = `date-${isoDate}-emp-${empId}`;
+                      return (
+                        <div key={empId} className="space-y-3">
+                          <button
+                            type="button"
+                            className="w-full text-left text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1 border-l-2 border-slate-400 pl-2 cursor-pointer hover:text-foreground transition-colors"
+                            onClick={() => toggleCollapse(subKey)}
+                          >
+                            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${collapsedGroups[subKey] ? '-rotate-90' : ''}`} />
+                            <UserIcon className="w-3.5 h-3.5" />
+                            {empNameStr} <span className="font-normal text-muted-foreground/80">({list.length} submissions)</span>
+                          </button>
+                          {!collapsedGroups[subKey] && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                              {list.map((row) => renderVisitCard(row))}
+                            </div>
+                          )}
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {list.map((row) => renderVisitCard(row))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -539,38 +559,53 @@ const Verification = () => {
 
             return (
               <div key={empId} className="border border-border/60 rounded-lg overflow-hidden bg-slate-50/20 dark:bg-slate-900/10">
-                <div className="bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center">
+                <button
+                  type="button"
+                  className="w-full bg-slate-100/50 dark:bg-slate-900/50 px-4 py-2 border-b flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  onClick={() => toggleCollapse(`emp-${empId}`)}
+                >
                   <div className="font-bold text-xs flex items-center gap-1.5">
+                    <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${collapsedGroups[`emp-${empId}`] ? '-rotate-90' : ''}`} />
                     <UserIcon className="w-3.5 h-3.5 text-muted-foreground" />
                     {empNameStr}
                   </div>
                   <Badge variant="outline" className="text-[10px] bg-white dark:bg-slate-950 font-bold">{empTotal} visits</Badge>
-                </div>
+                </button>
 
-                <div className="p-4 space-y-6">
-                  {Object.entries(datesObj)
-                    .sort((a, b) => b[0].localeCompare(a[0]))
-                    .map(([isoDate, list]) => {
-                      const formattedDate = new Date(isoDate + "T00:00:00").toLocaleDateString("en-IN", {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      });
+                {!collapsedGroups[`emp-${empId}`] && (
+                  <div className="p-4 space-y-6">
+                    {Object.entries(datesObj)
+                      .sort((a, b) => b[0].localeCompare(a[0]))
+                      .map(([isoDate, list]) => {
+                        const formattedDate = new Date(isoDate + "T00:00:00").toLocaleDateString("en-IN", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        });
+                        const subKey = `emp-${empId}-date-${isoDate}`;
 
-                      return (
-                        <div key={isoDate} className="space-y-3">
-                          <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1 border-l-2 border-slate-400 pl-2">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {formattedDate} <span className="font-normal text-muted-foreground/80">({list.length} submissions)</span>
+                        return (
+                          <div key={isoDate} className="space-y-3">
+                            <button
+                              type="button"
+                              className="w-full text-left text-xs font-semibold text-muted-foreground flex items-center gap-1.5 px-1 border-l-2 border-slate-400 pl-2 cursor-pointer hover:text-foreground transition-colors"
+                              onClick={() => toggleCollapse(subKey)}
+                            >
+                              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${collapsedGroups[subKey] ? '-rotate-90' : ''}`} />
+                              <Calendar className="w-3.5 h-3.5" />
+                              {formattedDate} <span className="font-normal text-muted-foreground/80">({list.length} submissions)</span>
+                            </button>
+                            {!collapsedGroups[subKey] && (
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {list.map((row) => renderVisitCard(row))}
+                              </div>
+                            )}
                           </div>
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            {list.map((row) => renderVisitCard(row))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
             );
           })}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Plus, Flame, Thermometer, Snowflake, Phone, Mail, Calendar, Search, LayoutGrid, List, MessageSquare, MessageCircle, Briefcase, Bell, BellRing, FileText, CreditCard, CheckCircle, XCircle, Edit, Trash2, Zap } from "lucide-react";
+import { Plus, Flame, Thermometer, Snowflake, Phone, Mail, Calendar, Search, LayoutGrid, List, MessageSquare, MessageCircle, Briefcase, Bell, BellRing, FileText, CreditCard, CheckCircle, XCircle, Edit, Trash2, Zap, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { WHATSAPP_TEMPLATES } from "@/data/whatsappTemplates";
 import { usePrivacyShield } from "@/contexts/PrivacyShieldContext";
 import type { Lead, LeadStage, LeadHeat, ClientCategory, LeadQuotationStatus, LeadPaymentStatus } from "@/types";
+import { exportToCSV } from "@/lib/export";
 
 const HEAT_ICONS: Record<LeadHeat, { icon: React.ElementType; color: string; label: string }> = {
   Hot: { icon: Flame, color: "text-blue-500", label: "Hot" },
@@ -61,6 +62,7 @@ const Leads = () => {
   const [view, setView] = useState<"kanban" | "table">("kanban");
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [editLeadId, setEditLeadId] = useState<string | null>(null);
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
@@ -134,6 +136,12 @@ const Leads = () => {
       // Role-Based Access Control logic
       if (user?.role === "Employee" && l.assignedTo !== user.id) return false;
 
+      // Date Filtering
+      if (selectedDate !== "") {
+        const leadDate = l.dateReceived ? l.dateReceived.slice(0, 10) : "";
+        if (leadDate !== selectedDate) return false;
+      }
+
       // Search Filtering
       if (search !== "") {
         const query = search.toLowerCase();
@@ -143,7 +151,7 @@ const Leads = () => {
       }
       return true;
     });
-  }, [leads, search, user]);
+  }, [leads, search, selectedDate, user]);
 
   // Sync detailLead with updated data when leads array changes
   useEffect(() => {
@@ -351,6 +359,38 @@ const Leads = () => {
     return Math.floor((Date.now() - created) / 86400000);
   };
 
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast.error("No leads available to export");
+      return;
+    }
+    const exportData = filtered.map((l, index) => ({
+      "S.No": index + 1,
+      "Contact Name": l.name || "—",
+      "Company/Organization": l.organization || "—",
+      "Role/Category": l.category || "—",
+      "Phone": l.phone || "—",
+      "WhatsApp": l.whatsapp || "—",
+      "Email": l.email || "—",
+      "Source": l.source || "—",
+      "Heat": l.heat || "—",
+      "Assigned To": l.assignedToName || "—",
+      "Stage": l.stage || "—",
+      "Estimated Value": l.estimatedValue || 0,
+      "Date Received": l.dateReceived ? formatDateDDMMYYYY(l.dateReceived) : "—",
+      "Last Interaction": l.lastInteractionDate ? formatDateDDMMYYYY(l.lastInteractionDate) : "—",
+      "Next Call Date": l.nextCallDate ? formatDateDDMMYYYY(l.nextCallDate) : "—",
+      "Next Objective": l.actionItem || "—",
+      "Quotation Status": l.quotationStatus || "Not Sent",
+      "Payment Status": l.paymentStatus || "Not Due",
+      "Notes": l.notes || "—",
+    }));
+
+    const dateSuffix = selectedDate ? `_${selectedDate}` : "";
+    exportToCSV(exportData, `Leads_Export${dateSuffix}`);
+    toast.success("Excel sheet downloaded successfully!");
+  };
+
   return (
     <div>
       <PageHeader
@@ -362,6 +402,34 @@ const Leads = () => {
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Search leads…" className="pl-9 w-52" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
+
+            <div className="flex items-center gap-1.5 bg-background border border-input rounded-md px-2 h-9">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                type="date"
+                className="border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-xs w-28 bg-transparent"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate("")}
+                  className="text-muted-foreground hover:text-foreground text-[10px] font-bold ml-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1.5 bg-white border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold py-1.5 h-9"
+              onClick={handleExportExcel}
+            >
+              <Download className="w-3.5 h-3.5 text-gray-500" /> Export Excel
+            </Button>
+
             <div className="flex border border-border rounded-md overflow-hidden">
               <Button size="sm" variant={view === "kanban" ? "default" : "ghost"} className="rounded-none" onClick={() => setView("kanban")}>
                 <LayoutGrid className="h-4 w-4" />
