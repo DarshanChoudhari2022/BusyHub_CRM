@@ -63,6 +63,13 @@ const Verification = () => {
   const [groupBy, setGroupBy] = useState<"none" | "date" | "employee">("none");
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
+  // Export Excel Date Range Dialog states
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportDuration, setExportDuration] = useState<"all" | "today" | "yesterday" | "7days" | "30days" | "custom">("all");
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [exporting, setExporting] = useState(false);
+
   const toggleCollapse = (key: string) => {
     setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -203,31 +210,104 @@ const Verification = () => {
   };
 
   const handleExportExcel = () => {
-    if (rows.length === 0) {
-      toast.error("No entries available to export");
-      return;
-    }
-    const exportData = rows.map((r, index) => ({
-      "S.No": index + 1,
-      "Society Name": r.name,
-      "Address": r.address || "—",
-      "Contact Person": r.contact_person || "—",
-      "Contact Phone": r.contact_phone || "—",
-      "Flats Count": r.number_of_flats || 0,
-      "Verification Status": r.verification_status === "verified_real" ? "Real" :
-                             r.verification_status === "verified_fake" ? "Fake" :
-                             r.verification_status === "unreachable" ? "Unreachable" : "Pending",
-      "Verification Notes": r.verification_notes || "—",
-      "Submitted By": r.employees?.name || "Unknown",
-      "Submission Time": new Date(r.created_at).toLocaleString("en-IN"),
-      "Latitude": r.lat || "—",
-      "Longitude": r.lng || "—",
-      "Accuracy (m)": r.accuracy_m || "—",
-      "Is Mock GPS": r.is_mock ? "Yes" : "No",
-    }));
+    setExportDialogOpen(true);
+  };
 
-    exportToCSV(exportData, "Verification_Queue_Entries");
-    toast.success("Excel sheet downloaded successfully!");
+  const executeExportExcel = async () => {
+    setExporting(true);
+    try {
+      let exportRows = [...rows];
+      let dateLabel = "All_Time";
+
+      if (exportDuration !== "all") {
+        let startIso = "";
+        let endIso = "";
+        const now = new Date();
+
+        if (exportDuration === "today") {
+          const today = now.toISOString().slice(0, 10);
+          startIso = `${today}T00:00:00.000Z`;
+          endIso = `${today}T23:59:59.999Z`;
+          dateLabel = today;
+        } else if (exportDuration === "yesterday") {
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          const yestStr = yesterday.toISOString().slice(0, 10);
+          startIso = `${yestStr}T00:00:00.000Z`;
+          endIso = `${yestStr}T23:59:59.999Z`;
+          dateLabel = yestStr;
+        } else if (exportDuration === "7days") {
+          const sevenDaysAgo = new Date(now);
+          sevenDaysAgo.setDate(now.getDate() - 7);
+          startIso = `${sevenDaysAgo.toISOString().slice(0, 10)}T00:00:00.000Z`;
+          endIso = `${now.toISOString().slice(0, 10)}T23:59:59.999Z`;
+          dateLabel = "Last_7_Days";
+        } else if (exportDuration === "30days") {
+          const thirtyDaysAgo = new Date(now);
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          startIso = `${thirtyDaysAgo.toISOString().slice(0, 10)}T00:00:00.000Z`;
+          endIso = `${now.toISOString().slice(0, 10)}T23:59:59.999Z`;
+          dateLabel = "Last_30_Days";
+        } else if (exportDuration === "custom") {
+          if (!exportStartDate || !exportEndDate) {
+            toast.error("Please select both start and end dates");
+            setExporting(false);
+            return;
+          }
+          startIso = `${exportStartDate}T00:00:00.000Z`;
+          endIso = `${exportEndDate}T23:59:59.999Z`;
+          dateLabel = `${exportStartDate}_to_${exportEndDate}`;
+        }
+
+        const { data, error } = await supabase
+          .from("society_data")
+          .select("*, employees:employees!employee_id(id, name, role)")
+          .gte("created_at", startIso)
+          .lte("created_at", endIso)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          toast.error("Failed to fetch data for export: " + error.message);
+          setExporting(false);
+          return;
+        }
+
+        exportRows = data || [];
+      }
+
+      if (exportRows.length === 0) {
+        toast.error("No entries available to export for this duration");
+        setExporting(false);
+        return;
+      }
+
+      const exportData = exportRows.map((r, index) => ({
+        "S.No": index + 1,
+        "Society Name": r.name,
+        "Address": r.address || "—",
+        "Contact Person": r.contact_person || "—",
+        "Contact Phone": r.contact_phone || "—",
+        "Flats Count": r.number_of_flats || 0,
+        "Verification Status": r.verification_status === "verified_real" ? "Real" :
+                               r.verification_status === "verified_fake" ? "Fake" :
+                               r.verification_status === "unreachable" ? "Unreachable" : "Pending",
+        "Verification Notes": r.verification_notes || "—",
+        "Submitted By": r.employees?.name || "Unknown",
+        "Submission Time": new Date(r.created_at).toLocaleString("en-IN"),
+        "Latitude": r.lat || "—",
+        "Longitude": r.lng || "—",
+        "Accuracy (m)": r.accuracy_m || "—",
+        "Is Mock GPS": r.is_mock ? "Yes" : "No",
+      }));
+
+      exportToCSV(exportData, `Verification_Queue_Entries_${dateLabel}`);
+      toast.success("Excel sheet downloaded successfully!");
+      setExportDialogOpen(false);
+    } catch (err: any) {
+      toast.error("An error occurred during export: " + err.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   /* ── Render helpers ───────────────────────────────────────── */
@@ -662,6 +742,100 @@ const Verification = () => {
             <Button variant="outline" onClick={() => setNotesOpen(null)}>Cancel</Button>
             <Button onClick={confirmMark} disabled={saving}>
               {saving ? "Saving..." : `Confirm ${notesOpen ? STATUS_META[notesOpen.status].label : ""}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Date Duration Selection Dialog */}
+      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <DialogContent className="max-w-md bg-white p-6 rounded-lg shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-gray-800">
+              <Download className="w-5 h-5 text-primary" /> Export Verification Data
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider block">
+                Select Date Duration
+              </label>
+              <select
+                value={exportDuration}
+                onChange={(e) => setExportDuration(e.target.value as any)}
+                className="w-full h-10 px-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm font-medium bg-white"
+              >
+                <option value="all">All Available (Latest 200)</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+            </div>
+
+            {exportDuration === "custom" && (
+              <div className="grid grid-cols-2 gap-3 animate-fadeIn duration-200">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-600 block">
+                    Start Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="date"
+                      value={exportStartDate}
+                      onChange={(e) => setExportStartDate(e.target.value)}
+                      className="pl-9 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-600 block">
+                    End Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      type="date"
+                      value={exportEndDate}
+                      onChange={(e) => setExportEndDate(e.target.value)}
+                      className="pl-9 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex items-center justify-end gap-2 border-t pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExportDialogOpen(false)}
+              disabled={exporting}
+              className="text-xs font-medium"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={executeExportExcel}
+              disabled={exporting}
+              className="bg-primary hover:bg-primary/90 text-xs font-medium flex items-center gap-1.5 text-white"
+            >
+              {exporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  Download Excel
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
